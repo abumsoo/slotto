@@ -153,6 +153,18 @@ NODE_ENV=development
 1. Create new files in `frontend/src/app/`
 2. Next.js uses file-based routing
 
+## Security Considerations
+
+This is a basic starter application. For production use, consider implementing:
+
+- **Rate Limiting**: Add rate limiting to API endpoints (e.g., using `express-rate-limit`)
+- **Input Validation**: Validate and sanitize all user inputs
+- **Authentication**: Implement user authentication (e.g., JWT, OAuth)
+- **HTTPS**: Use HTTPS in production
+- **Environment Variables**: Never commit `.env` files with sensitive data
+- **SQL Injection Protection**: Use parameterized queries (already implemented with pg)
+- **CORS Configuration**: Restrict CORS to specific origins in production
+
 ## Troubleshooting
 
 ### Database Connection Issues

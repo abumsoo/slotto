@@ -9,6 +9,7 @@ router.get('/test', (req: Request, res: Response) => {
 });
 
 // Database test endpoint
+// TODO: Add rate limiting for production use (e.g., express-rate-limit)
 router.get('/db-test', async (req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT NOW()');
