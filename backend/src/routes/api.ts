@@ -8,6 +8,17 @@ router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'API is working!' });
 });
 
+// users
+// users:signup
+// users:login
+// users:verify
+// users:reset-password-request
+// users:reset-password
+
+// feed
+// post posts
+// repost
+
 // Database test endpoint
 // TODO: Add rate limiting for production use (e.g., express-rate-limit)
 router.get('/db-test', async (req: Request, res: Response) => {
