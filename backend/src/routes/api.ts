@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import pool from '../config/database';
+import db from '../config/database';
 
 const router = express.Router();
 
@@ -7,6 +7,10 @@ const router = express.Router();
 router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'API is working!' });
 });
+
+router.get('/home', (req: Request, res: Response) => {
+  res.send("Honey, I'm home.");
+})
 
 // users
 // users:signup
@@ -23,10 +27,10 @@ router.get('/test', (req: Request, res: Response) => {
 // TODO: Add rate limiting for production use (e.g., express-rate-limit)
 router.get('/db-test', async (req: Request, res: Response) => {
   try {
-    const result = await pool.query('SELECT NOW()');
+    const { value } = await db.one('SELECT 123 as value');
     res.json({ 
       message: 'Database connected successfully!',
-      timestamp: result.rows[0].now 
+      timestamp: value
     });
   } catch (error) {
     console.error('Database connection error:', error);
