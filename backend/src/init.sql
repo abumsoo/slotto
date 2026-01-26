@@ -1,0 +1,27 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',
+  profile_pic VARCHAR(255),
+  last_post_date DATE,
+  last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_repost BOOLEAN DEFAULT FALSE,
+  original_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL,
+  original_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  repost_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX idx_posts_created_at ON posts(created_at);
