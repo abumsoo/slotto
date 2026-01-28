@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link'
 import { useEffect, useState } from "react";
 
 interface ApiResponse {
@@ -116,6 +117,9 @@ export default function Home() {
               <p className="text-gray-600 dark:text-gray-400">
                 Full-stack app with React/TypeScript, Next.js, Node.js, and PostgreSQL
               </p>
+            </div>
+            <div className="text-center pt-4">
+		<Link href="/signup">Sign Up</Link>
             </div>
           </div>
         </div>

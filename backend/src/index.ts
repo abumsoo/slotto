@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRoutes from './routes/api';
+import webRoutes from './routes/web';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api', apiRoutes);
+app.use('/', webRoutes);
 
 // Health check route
 app.get('/health', (req: Request, res: Response) => {

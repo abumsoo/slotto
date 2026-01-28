@@ -8,9 +8,14 @@ router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'API is working!' });
 });
 
-router.get('/home', (req: Request, res: Response) => {
+router.get('/users/signup', (req: Request, res: Response) => {
   res.send("Honey, I'm home.");
 })
+
+// TODO: add a way to add a user
+// TODO: add a user
+// TODO: add a way to add a post
+// TODO: make a post
 
 // users
 // users:signup
