@@ -118,8 +118,13 @@ export default function Home() {
                 Full-stack app with React/TypeScript, Next.js, Node.js, and PostgreSQL
               </p>
             </div>
-            <div className="text-center pt-4">
+            <div className="flex flex-row text-center pt-4">
+	      <div className="flex-1">
 		<Link href="/signup">Sign Up</Link>
+	      </div>
+	      <div className="flex-1">
+		<Link href="/login">Login</Link>
+	      </div>
             </div>
           </div>
         </div>
