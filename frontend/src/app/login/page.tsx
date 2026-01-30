@@ -1,10 +1,11 @@
 "use client";
-import Link from "next/link";
 import { useState, FormEvent } from "react";
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+
+  const router = useRouter();
 
   async function onSubmitHandler(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -16,6 +17,7 @@ export default function LoginPage() {
     const response = await fetch('http://localhost:3001/api/users/login', {
       method: 'POST',
       headers: { "Content-type" : "application/json" },
+      credentials: 'include',
       body: JSON.stringify(body),
     })
     // need a way to see if login was successful
@@ -25,7 +27,7 @@ export default function LoginPage() {
       setError(data.message || "Login failed");
       return;
     } else {
-      setSuccess(true);
+      router.push('/home')
     }
   }
   return (
@@ -35,8 +37,6 @@ export default function LoginPage() {
         <input name="password" type="password" placeholder="Password" required />
         <button className="border-1" type="submit">Log In</button>
 	{error && <p className="text-red-500">{error}</p>}
-	{success && <p className="text-green-500">Successfully logged in</p>}
-	{success && <Link href="/post">Post</Link> }
       </form>
 
     </div>
