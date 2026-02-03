@@ -11,6 +11,7 @@ export default function SignupPage() {
       username: formData.get("username"),
       email: formData.get("email"),
       password: formData.get("password"),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }
     const response = await fetch('http://localhost:3001/api/users/signup', {
       method: 'POST',
