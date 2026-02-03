@@ -1,6 +1,8 @@
 "use client";
 
+import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link'
+import { redirect } from 'next/navigation';
 import { useEffect, useState } from "react";
 
 interface ApiResponse {
@@ -15,6 +17,14 @@ export default function Home() {
   const [dbStatus, setDbStatus] = useState<string>("Checking...");
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [dbData, setDbData] = useState<ApiResponse | null>(null);
+
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (user) {
+    redirect('/home');
+  }
 
   useEffect(() => {
     // Check API connection

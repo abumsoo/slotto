@@ -15,6 +15,17 @@ router.post('/users/signup', async (req: Request, res: Response) => {
   const { name, username, email, password, timezone } = req.body;
   const password_hash = await bcrypt.hash(password, 10);
   const user = await db.one('INSERT INTO users (username, name, email, password_hash, timezone) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email', [username, name, email, password_hash, timezone]);
+  const token = jwt.sign(
+    { id: user.id },
+    'my-secret-key',
+    { expiresIn: '7d' }
+  )
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 7*24*60*60*1000
+  });
   res.status(201).json(user);
 })
 
@@ -55,7 +66,11 @@ router.post('/post', async (req: Request, res: Response) => {
     res.status(429).json({ message: "You've already posted today"});
     return;
   }
-  await db.one('INSERT INTO posts (content, user_id, is_repost, original_post_id, original_user_id) VALUES ($1, $2) RETURNING content',
+  await db.one(`
+  INSERT INTO posts
+  (content, user_id, is_repost, original_post_id, original_user_id)
+  VALUES ($1, $2, $3, $4, $5)
+  RETURNING content`,
     [post.content, user.id, post.is_repost, post.original_post_id, post.original_user_id]);
   await db.none('UPDATE users SET last_post_date = NOW() WHERE id=$1', [user.id]);
   res.status(201).send("post successful");
@@ -63,7 +78,12 @@ router.post('/post', async (req: Request, res: Response) => {
 
 // feed
 router.get('/posts', async (req: Request, res: Response) => {
-  const posts = await db.any('SELECT id, content, created_at FROM posts ORDER BY created_at DESC LIMIT 10');
+  const posts = await db.any(`
+  SELECT id, content, created_at, is_repost
+  FROM posts
+  WHERE created_at > NOW() - INTERVAL '3 days'
+  ORDER BY created_at
+  DESC LIMIT 10`);
   res.json(posts);
 })
 

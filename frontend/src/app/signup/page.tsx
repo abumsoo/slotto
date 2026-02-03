@@ -23,6 +23,8 @@ export default function SignupPage() {
       const data = await response.json()
       setError(data.message || "Signup failed");
       return;
+    } else {
+      
     }
   }
   

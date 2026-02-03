@@ -68,7 +68,8 @@ export default function HomePage() {
       {posts.map((post) => (
 	<div key={post.id}>
 	  <div>
-	    {post.content}
+	    {post.is_repost && <p>This is a repost</p>}
+	    <p>{post.content}</p>
 	  </div>
 	  <div>
 	    {timeAgo(post.created_at)}
