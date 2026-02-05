@@ -10,7 +10,7 @@ interface User {
   verified: boolean;
 }
 
-export function useAuth() {
+export function useAuth(options?: { redirectTo?: string }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +21,11 @@ export function useAuth() {
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => setUser(data))
-      .catch(() => router.push('/login'))
+      .catch(() => {
+        if (options?.redirectTo) {
+          router.push(options.redirectTo);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -18,14 +18,6 @@ export default function Home() {
   const [apiData, setApiData] = useState<ApiResponse | null>(null);
   const [dbData, setDbData] = useState<ApiResponse | null>(null);
 
-  const { user, loading } = useAuth();
-
-  if (loading) return null;
-
-  if (user) {
-    redirect('/home');
-  }
-
   useEffect(() => {
     // Check API connection
     fetch("http://localhost:3001/api/test")
@@ -54,9 +46,25 @@ export default function Home() {
       });
   }, []);
 
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (user) {
+    redirect('/home');
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <main className="max-w-2xl w-full mx-auto p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <nav className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow">
+        <Link href="/" className="text-xl font-bold text-gray-800 dark:text-white">Slotto</Link>
+        <div className="flex gap-4">
+          <Link href="/login" className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">Login</Link>
+          <Link href="/signup" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Sign Up</Link>
+        </div>
+      </nav>
+      <main className="flex items-center justify-center p-8">
+        <div className="max-w-2xl w-full">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
           <h1 className="text-4xl font-bold text-center mb-8 text-gray-800 dark:text-white">
             🎰 Slotto
@@ -128,15 +136,8 @@ export default function Home() {
                 Full-stack app with React/TypeScript, Next.js, Node.js, and PostgreSQL
               </p>
             </div>
-            <div className="flex flex-row text-center pt-4">
-	      <div className="flex-1">
-		<Link href="/signup">Sign Up</Link>
-	      </div>
-	      <div className="flex-1">
-		<Link href="/login">Login</Link>
-	      </div>
-            </div>
           </div>
+        </div>
         </div>
       </main>
     </div>

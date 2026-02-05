@@ -24,7 +24,7 @@ export default function SignupPage() {
       setError(data.message || "Signup failed");
       return;
     } else {
-      
+      console.log("signup succeeded");
     }
   }
   
