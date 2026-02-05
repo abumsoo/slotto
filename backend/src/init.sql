@@ -18,7 +18,7 @@ CREATE TABLE users (
 CREATE TABLE posts (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(content) <= 1000),
   image_url TEXT,
   is_repost BOOLEAN DEFAULT FALSE,
   original_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL,

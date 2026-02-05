@@ -52,7 +52,6 @@ router.post('/users/signup', async (req: Request, res: Response) => {
 
 router.post('/users/verify', async (req: Request, res: Response) => {
   const { token } = req.query;
-  console.log(token);
   const user = await db.oneOrNone('SELECT id FROM users WHERE verification_token = $1 AND verification_token_expires > NOW()', [token]);
   if (!user) {
     return res.status(400).json({ message: 'Invalid or expired token' });
@@ -125,6 +124,9 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
   }
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
   const body = req.body;
+  if (!body.content || body.content.length > 1000) {
+    return res.status(400).json({ message: 'Post must be 1-1000 characters'});
+  }
   const { already_posted_today } = await db.one('SELECT (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date AS already_posted_today FROM users WHERE id=$1', [req.user.id]);
   if (already_posted_today) {
     res.status(429).json({ message: "You've already posted today"});
@@ -143,7 +145,7 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
 // feed
 router.get('/posts', async (req: Request, res: Response) => {
   const posts = await db.any(`
-  SELECT id, content, created_at, is_repost
+  SELECT id, content, image_url, created_at, is_repost
   FROM posts
   WHERE created_at > NOW() - INTERVAL '3 days'
   ORDER BY created_at

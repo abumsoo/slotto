@@ -1,9 +1,12 @@
 "use client";
-import { useState, FormEvent } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
   const [error, setError] = useState("");
-  async function onSubmitHandler(event: FormEvent<HTMLFormElement>) {
+  const router = useRouter();
+
+  async function onSubmitHandler(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const body = {
@@ -23,9 +26,9 @@ export default function SignupPage() {
       const data = await response.json()
       setError(data.message || "Signup failed");
       return;
-    } else {
-      console.log("signup succeeded");
-    }
+    } 
+
+    router.push("/check-email");
   }
   
   return (

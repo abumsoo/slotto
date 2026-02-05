@@ -2,18 +2,22 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, MouseEvent } from "react";
+import { useEffect, useState } from "react";
 import { timeAgo } from "@/helpers";
 
 interface Post {
   id: number;
   user_id: number;
   content: string;
+  image_url: string;
   created_at: string;
   is_repost: boolean;
   original_post_id: number;
   original_user_id: number;
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const MAX_LENGTH = 1000;
 
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -28,7 +32,7 @@ export default function HomePage() {
   const router = useRouter();
 
   async function logout() {
-    await fetch('http://localhost:3001/api/users/logout', {
+    await fetch(`${API_URL}/api/users/logout`, {
       method: 'POST',
       credentials: 'include',
     });
@@ -65,7 +69,7 @@ export default function HomePage() {
       formData.append('image', postImage);
     }
 
-    const response = await fetch('http://localhost:3001/api/post', {
+    const response = await fetch(`${API_URL}/api/post`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
@@ -88,7 +92,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/posts', {
+    fetch(`${API_URL}/api/posts`, {
       credentials: 'include',
     })
       .then((res) => (res.json()))
@@ -106,7 +110,7 @@ export default function HomePage() {
     formData.append('original_post_id', post.id.toString());
     formData.append('original_user_id', post.user_id.toString());
 
-    const response = await fetch('http://localhost:3001/api/post', {
+    const response = await fetch(`${API_URL}/api/post`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
@@ -123,6 +127,7 @@ export default function HomePage() {
     setSuccess(true);
   }
 
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -133,10 +138,14 @@ export default function HomePage() {
         <textarea
           value={postContent}
           onChange={(e) => setPostContent(e.target.value)}
+	  maxLength={MAX_LENGTH}
           placeholder="What's on your mind?"
           className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
           rows={3}
         />
+	<span className="text-sm text-muted-foreground">
+	  {postContent.length}/{MAX_LENGTH}
+	</span>
         {imagePreview && (
           <div className="relative inline-block">
             <img src={imagePreview} alt="Preview" className="max-h-48 rounded-lg" />
@@ -181,7 +190,7 @@ export default function HomePage() {
             <p className="text-card-foreground">{post.content}</p>
 	    {post.image_url && (
 		<img
-		  src={`http://localhost:3001${post.image_url}`}
+		  src={`${API_URL}${post.image_url}`}
 		  alt=""
 		  className="mt-2 rounded-lg max-h-96"
 		/>
