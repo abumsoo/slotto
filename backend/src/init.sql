@@ -23,7 +23,6 @@ CREATE TABLE posts (
   is_repost BOOLEAN DEFAULT FALSE,
   original_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL,
   original_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-  repost_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, MouseEvent } from "react";
 import { timeAgo } from "@/helpers";
 
 interface Post {
@@ -56,7 +56,7 @@ export default function HomePage() {
     setImagePreview(null);
   }
 
-  async function handlePostSubmit(e: React.FormEvent) {
+  async function handlePostSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!postContent.trim() && !postImage) return;
 
@@ -101,19 +101,14 @@ export default function HomePage() {
 
   if (loading) return null;
 
-  async function onClickHandler(event: MouseEvent<HTMLButtonElement>, post: Post) {
+  async function repostHandler(event: MouseEvent<HTMLButtonElement>, postId: number) {
     event.preventDefault();
 
-    const formData = new FormData();
-    formData.append('content', post.content);
-    formData.append('is_repost', 'true');
-    formData.append('original_post_id', post.id.toString());
-    formData.append('original_user_id', post.user_id.toString());
-
-    const response = await fetch(`${API_URL}/api/post`, {
+    const response = await fetch(`${API_URL}/api/repost`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: formData,
+      body: JSON.stringify({ postId }) ,
     });
 
     if (!response.ok) {
@@ -200,7 +195,7 @@ export default function HomePage() {
                 {timeAgo(post.created_at)}
               </span>
               <button
-                onClick={(event) => onClickHandler(event, post)}
+                onClick={(event) => repostHandler(event, post.id)}
                 className="px-3 py-1 text-sm text-primary hover:opacity-80"
               >
                 Repost

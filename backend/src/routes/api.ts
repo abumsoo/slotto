@@ -98,7 +98,8 @@ router.get('/users/me', authenticate, async(req, res) => {
   res.json(user);
 })
 
-// post posts or repost
+
+// post posts
 const upload = multer({
   storage: multer.diskStorage({
     destination: 'uploads',
@@ -115,6 +116,7 @@ const upload = multer({
     }
   }
 });
+
 router.post('/post', upload.single('image'), authenticate, async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(403).json({ message: 'Please login to post' });
@@ -129,7 +131,7 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
   }
   const { already_posted_today } = await db.one('SELECT (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date AS already_posted_today FROM users WHERE id=$1', [req.user.id]);
   if (already_posted_today) {
-    res.status(429).json({ message: "You've already posted today"});
+    res.status(429).json({ message: "You already posted today"});
     return;
   }
   const post = await db.one(`
@@ -140,12 +142,36 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
     [body.content, req.user.id, imageUrl, body.is_repost, body.original_post_id, body.original_user_id]);
   await db.none('UPDATE users SET last_post_date = NOW() WHERE id=$1', [req.user.id]);
   res.status(201).json(post);
+
 })
+
+
+// repost
+router.post('/repost', authenticate, async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(403).json({ message: 'Please login to repost' });
+  }
+  const { already_posted_today } = await db.one('SELECT (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date AS already_posted_today FROM users WHERE id=$1', [req.user.id]);
+  if (already_posted_today) {
+    res.status(429).json({ message: "You already posted today"});
+    return;
+  }
+  const post = await db.oneOrNone(`
+  INSERT INTO posts (content, user_id, image_url, is_repost, original_post_id, original_user_id)
+  SELECT content, $1, image_url, TRUE, id, user_id
+  FROM posts
+  WHERE id = $2
+  RETURNING *`, [ req.user.id, req.body.postId]);
+  if (!post) {
+    return res.status(404).json({ message: 'Repost failed' });
+  }
+  res.status(201).json(post);
+});
 
 // feed
 router.get('/posts', async (req: Request, res: Response) => {
   const posts = await db.any(`
-  SELECT id, content, image_url, created_at, is_repost
+  SELECT id, user_id, content, image_url, created_at, is_repost, original_post_id, original_user_id
   FROM posts
   WHERE created_at > NOW() - INTERVAL '3 days'
   ORDER BY created_at
