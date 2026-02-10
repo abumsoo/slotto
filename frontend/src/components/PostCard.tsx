@@ -17,13 +17,14 @@ export interface Post {
 interface PostCardProps {
   post: Post;
   onRepost: (postId: number) => void;
+  highlighted?: boolean;
 }
 
-export function PostCard({ post, onRepost }: PostCardProps) {
+export function PostCard({ post, onRepost, highlighted }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border p-4">
+    <div className={`bg-card rounded-lg shadow-sm border border-border p-4${highlighted ? ' animate-highlight-fade' : ''}`}>
       {post.is_repost && (
         <p className="text-sm text-muted-foreground mb-2">Repost</p>
       )}

@@ -4,6 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PostCard, Post } from "@/components/PostCard";
+import { LoginPrompt } from "@/components/LoginPrompt";
+import { Toast } from "@/components/Toast";
+import { VerifyEmailPrompt } from "@/components/VerifyEmailPrompt";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const MAX_LENGTH = 1000;
@@ -11,13 +14,16 @@ const MAX_LENGTH = 1000;
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [highlightedPostId, setHighlightedPostId] = useState<number | null>(null);
   const [postContent, setPostContent] = useState("");
   const [postImage, setPostImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showVerifyEmail, setShowVerifyEmail] = useState(false);
 
-  const { user, loading } = useAuth({ redirectTo: '/login' });
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   async function logout() {
@@ -48,6 +54,7 @@ export default function HomePage() {
   async function handlePostSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!postContent.trim() && !postImage) return;
+    if (!user) { setShowLoginPrompt(true); return; }
 
     setIsPosting(true);
     setError("");
@@ -65,6 +72,11 @@ export default function HomePage() {
     });
 
     if (!response.ok) {
+      if (response.status === 403) {
+        setShowVerifyEmail(true);
+        setIsPosting(false);
+        return;
+      }
       const data = await response.text();
       setError(data || "Post failed");
       setIsPosting(false);
@@ -77,7 +89,8 @@ export default function HomePage() {
     setPostImage(null);
     setImagePreview(null);
     setIsPosting(false);
-    setSuccess(true);
+    setToast("Posted!");
+    setHighlightedPostId(newPost.id);
   }
 
   useEffect(() => {
@@ -91,6 +104,7 @@ export default function HomePage() {
   if (loading) return null;
 
   async function repostHandler(postId: number) {
+    if (!user) { setShowLoginPrompt(true); return; }
     const response = await fetch(`${API_URL}/api/repost`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -106,17 +120,27 @@ export default function HomePage() {
 
     const newPost = await response.json();
     setPosts([newPost, ...posts]);
-    setSuccess(true);
+    setToast("Reposted!");
+    setHighlightedPostId(newPost.id);
   }
 
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-foreground">Slotto</h2>
+        <h2 className="text-xl font-semibold text-foreground">Slothy</h2>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">@{user?.username}</span>
-          <button onClick={logout} className="px-4 py-2 text-accent hover:opacity-80">Logout</button>
+          {user ? (
+            <>
+              <span className="text-sm text-muted-foreground">@{user.username}</span>
+              <button onClick={logout} className="px-4 py-2 text-accent hover:opacity-80">Logout</button>
+            </>
+          ) : (
+            <>
+              <a href="/login" className="px-4 py-2 text-accent hover:opacity-80">Login</a>
+              <a href="/signup" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90">Sign Up</a>
+            </>
+          )}
         </div>
       </div>
       <form onSubmit={handlePostSubmit} className="bg-card rounded-lg shadow-sm border border-border p-4 space-y-3">
@@ -144,9 +168,8 @@ export default function HomePage() {
           </div>
         )}
         {error && <p className="text-red-500 text-sm">{error}</p>}
-        {success && <p className="text-green-500 text-sm">Posted!</p>}
         <div className="flex items-center justify-between">
-          <label className="cursor-pointer px-3 py-2 text-muted-foreground hover:text-foreground">
+          <label className="cursor-pointer py-2 text-muted-foreground hover:text-foreground">
             <input
               type="file"
               accept="image/*"
@@ -168,9 +191,12 @@ export default function HomePage() {
       </form>
       <div className="space-y-4">
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} onRepost={repostHandler} />
+          <PostCard key={post.id} post={post} onRepost={repostHandler} highlighted={post.id === highlightedPostId} />
         ))}
       </div>
+      {showLoginPrompt && <LoginPrompt onClose={() => setShowLoginPrompt(false)} />}
+      {showVerifyEmail && <VerifyEmailPrompt onClose={() => setShowVerifyEmail(false)} />}
+      {toast && <Toast message={toast} onClose={() => { setToast(null); setHighlightedPostId(null); }} />}
     </div>
   )
 }

@@ -14,7 +14,7 @@ router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'API is working!' });
 });
 
-async function sendTestEmail(verificationToken: string) {
+async function sendTestEmail(verificationToken: string, recipientEmail: string) {
   const testAccount = await nodemailer.createTestAccount();
   const transporter = nodemailer.createTransport({
     host: testAccount.smtp.host, // "smtp.ethereal.email",
@@ -27,7 +27,7 @@ async function sendTestEmail(verificationToken: string) {
   });
   const info = await transporter.sendMail({
     from: '"Test Sender" <test@example.com>',
-    to: "recipient@example.com",
+    to: recipientEmail,
     subject: "Test email",
     text: `http://localhost:3000/verify?token=${verificationToken}`,
     html: `<b>http://localhost:3000/verify?token=${verificationToken}</b>`,
@@ -46,7 +46,7 @@ router.post('/users/signup', async (req: Request, res: Response) => {
   const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   await db.none('UPDATE users SET verification_token = $1, verification_token_expires = $2 WHERE id = $3', [verificationToken, expires, user.id]);
   // send email
-  sendTestEmail(verificationToken).catch(console.error);
+  sendTestEmail(verificationToken, email).catch(console.error);
   res.status(201).json({message: 'Check your email to verify your account'});
 })
 
@@ -59,6 +59,24 @@ router.post('/users/verify', async (req: Request, res: Response) => {
     await db.none('UPDATE users SET email_verified = TRUE, verification_token = NULL WHERE id=$1', [user.id])
   }
   res.json({ message: 'Email verified' });
+})
+
+router.post('/users/resend-verification', authenticate, async (req: Request, res: Response) => {
+  if (req.user!.email_verified) {
+    return res.status(400).json({ message: 'Email already verified' });
+  }
+  const existing = await db.oneOrNone('SELECT verification_token_expires FROM users WHERE id = $1', [req.user!.id]);
+  if (existing?.verification_token_expires) {
+    const tokenAge = Date.now() - (new Date(existing.verification_token_expires).getTime() - 60 * 60 * 1000);
+    if (tokenAge < 60 * 1000) {
+      return res.status(429).json({ message: 'Please wait before requesting another email' });
+    }
+  }
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+  await db.none('UPDATE users SET verification_token = $1, verification_token_expires = $2 WHERE id = $3', [verificationToken, expires, req.user!.id]);
+  sendTestEmail(verificationToken, req.user!.email).catch(console.error);
+  res.json({ message: 'Verification email sent' });
 })
 
 router.post('/users/login', async (req: Request, res: Response) => {

@@ -49,3 +49,31 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes highlight-fade {
+  0% {
+    background-color: color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-toast-slide-in {
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+.animate-highlight-fade {
+  animation: highlight-fade 2s ease-out;
+}
