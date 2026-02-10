@@ -24,7 +24,7 @@ export function PostCard({ post, onRepost, highlighted }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
 
   return (
-    <div className={`bg-card rounded-lg shadow-sm border border-border p-4${highlighted ? ' animate-highlight-fade' : ''}`}>
+    <div className={`bg-card rounded-lg shadow-sm border border-border p-4 transition-colors hover:bg-muted${highlighted ? ' animate-highlight-fade' : ''}`}>
       {post.is_repost && (
         <p className="text-sm text-muted-foreground mb-2">Repost</p>
       )}
