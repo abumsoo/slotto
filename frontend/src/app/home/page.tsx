@@ -2,19 +2,8 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, MouseEvent } from "react";
-import { timeAgo } from "@/helpers";
-
-interface Post {
-  id: number;
-  user_id: number;
-  content: string;
-  image_url: string;
-  created_at: string;
-  is_repost: boolean;
-  original_post_id: number;
-  original_user_id: number;
-}
+import { useEffect, useState } from "react";
+import { PostCard, Post } from "@/components/PostCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const MAX_LENGTH = 1000;
@@ -101,14 +90,12 @@ export default function HomePage() {
 
   if (loading) return null;
 
-  async function repostHandler(event: MouseEvent<HTMLButtonElement>, postId: number) {
-    event.preventDefault();
-
+  async function repostHandler(postId: number) {
     const response = await fetch(`${API_URL}/api/repost`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ postId }) ,
+      body: JSON.stringify({ postId }),
     });
 
     if (!response.ok) {
@@ -127,7 +114,10 @@ export default function HomePage() {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-foreground">Slotto</h2>
-        <button onClick={logout} className="px-4 py-2 text-accent hover:opacity-80">Logout</button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">@{user?.username}</span>
+          <button onClick={logout} className="px-4 py-2 text-accent hover:opacity-80">Logout</button>
+        </div>
       </div>
       <form onSubmit={handlePostSubmit} className="bg-card rounded-lg shadow-sm border border-border p-4 space-y-3">
         <textarea
@@ -178,30 +168,7 @@ export default function HomePage() {
       </form>
       <div className="space-y-4">
         {posts.map((post) => (
-          <div key={post.id} className="bg-card rounded-lg shadow-sm border border-border p-4">
-            {post.is_repost && (
-              <p className="text-sm text-muted-foreground mb-2">Repost</p>
-            )}
-            <p className="text-card-foreground">{post.content}</p>
-	    {post.image_url && (
-		<img
-		  src={`${API_URL}${post.image_url}`}
-		  alt=""
-		  className="mt-2 rounded-lg max-h-96"
-		/>
-	    )}
-            <div className="mt-3 flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">
-                {timeAgo(post.created_at)}
-              </span>
-              <button
-                onClick={(event) => repostHandler(event, post.id)}
-                className="px-3 py-1 text-sm text-primary hover:opacity-80"
-              >
-                Repost
-              </button>
-            </div>
-          </div>
+          <PostCard key={post.id} post={post} onRepost={repostHandler} />
         ))}
       </div>
     </div>
