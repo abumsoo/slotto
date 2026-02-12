@@ -112,8 +112,88 @@ router.get('/users/me', authenticate, async(req, res) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
-  const user = await db.one('SELECT id, username, email FROM users WHERE id=$1', [req.user.id]);
+  const user = await db.one('SELECT id, username, name, email, email_verified AS verified FROM users WHERE id=$1', [req.user.id]);
   res.json(user);
+})
+
+router.patch('/users/profile', authenticate, async (req: Request, res: Response) => {
+  const { username, name } = req.body;
+  if (!username && !name) {
+    return res.status(400).json({ message: 'Username or name is required' });
+  }
+  if (username !== undefined) {
+    if (username.length < 1 || username.length > 50 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      return res.status(400).json({ message: 'Username must be 1-50 alphanumeric characters or underscores' });
+    }
+    const existing = await db.oneOrNone('SELECT id FROM users WHERE username = $1 AND id != $2', [username, req.user!.id]);
+    if (existing) {
+      return res.status(409).json({ message: 'Username is already taken' });
+    }
+  }
+  if (name !== undefined && (name.length < 1 || name.length > 100)) {
+    return res.status(400).json({ message: 'Name must be 1-100 characters' });
+  }
+  const user = await db.one(
+    'UPDATE users SET username = COALESCE($1, username), name = COALESCE($2, name) WHERE id = $3 RETURNING id, username, name, email',
+    [username || null, name || null, req.user!.id]
+  );
+  res.json(user);
+})
+
+router.patch('/users/email', authenticate, async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ message: 'Valid email is required' });
+  }
+  const current = await db.one('SELECT email FROM users WHERE id = $1', [req.user!.id]);
+  if (current.email === email) {
+    return res.status(400).json({ message: 'This is already your email' });
+  }
+  const existing = await db.oneOrNone('SELECT id FROM users WHERE email = $1 AND id != $2', [email, req.user!.id]);
+  if (existing) {
+    return res.status(409).json({ message: 'Email is already in use' });
+  }
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+  await db.none(
+    'UPDATE users SET email = $1, email_verified = FALSE, verification_token = $2, verification_token_expires = $3 WHERE id = $4',
+    [email, verificationToken, expires, req.user!.id]
+  );
+  sendTestEmail(verificationToken, email).catch(console.error);
+  res.json({ message: 'Email updated. Check your inbox to verify.' });
+})
+
+router.patch('/users/password', authenticate, async (req: Request, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  }
+  const { password_hash } = await db.one('SELECT password_hash FROM users WHERE id = $1', [req.user!.id]);
+  const match = await bcrypt.compare(currentPassword, password_hash);
+  if (!match) {
+    return res.status(401).json({ message: 'Current password is incorrect' });
+  }
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await db.none('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user!.id]);
+  res.json({ message: 'Password updated' });
+})
+
+router.delete('/users/me', authenticate, async (req: Request, res: Response) => {
+  const { password } = req.body;
+  if (!password) {
+    return res.status(400).json({ message: 'Password is required' });
+  }
+  const { password_hash } = await db.one('SELECT password_hash FROM users WHERE id = $1', [req.user!.id]);
+  const match = await bcrypt.compare(password, password_hash);
+  if (!match) {
+    return res.status(401).json({ message: 'Password is incorrect' });
+  }
+  await db.none('DELETE FROM users WHERE id = $1', [req.user!.id]);
+  res.clearCookie('token');
+  res.json({ message: 'Account deleted' });
 })
 
 

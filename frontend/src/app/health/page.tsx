@@ -16,7 +16,7 @@ export default function HealthPage() {
   const [dbData, setDbData] = useState<ApiResponse | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/test")
+    fetch('/api/test')
       .then((res) => res.json())
       .then((data) => {
         setApiStatus("Connected");
@@ -26,7 +26,7 @@ export default function HealthPage() {
         setApiStatus("Disconnected");
       });
 
-    fetch("http://localhost:3001/api/db-test")
+    fetch('/api/db-test')
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

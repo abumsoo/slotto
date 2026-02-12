@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { timeAgo } from "@/helpers";
+import { MarkdownContent } from "@/components/MarkdownContent";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -28,7 +29,7 @@ export function PostCard({ post, onRepost, highlighted }: PostCardProps) {
       {post.is_repost && (
         <p className="text-sm text-muted-foreground mb-2">Repost</p>
       )}
-      <p className="text-card-foreground">{post.content}</p>
+      <div className="text-card-foreground"><MarkdownContent content={post.content} /></div>
       {post.image_url && (
         <div
           className="mt-2 bg-black rounded-lg max-h-96 flex items-center justify-center cursor-pointer"

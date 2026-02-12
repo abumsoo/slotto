@@ -16,7 +16,7 @@ export default function VerifyPage() {
       return;
     }
 
-    fetch(`http://localhost:3001/api/users/verify?token=${token}`, {
+    fetch(`/api/users/verify?token=${token}`, {
       method: 'POST',
     })
       .then(async (res) => {

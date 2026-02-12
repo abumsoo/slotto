@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 interface User {
   id: number;
   username: string;
+  name: string;
   email: string;
   verified: boolean;
 }
@@ -15,8 +16,8 @@ export function useAuth(options?: { redirectTo?: string }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('http://localhost:3001/api/users/me', {
+  function fetchUser() {
+    return fetch('/api/users/me', {
       credentials: 'include',
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))
@@ -27,7 +28,15 @@ export function useAuth(options?: { redirectTo?: string }) {
         }
       })
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    fetchUser();
   }, []);
 
-  return { user, loading };
+  function refreshUser() {
+    return fetchUser();
+  }
+
+  return { user, loading, refreshUser };
 }

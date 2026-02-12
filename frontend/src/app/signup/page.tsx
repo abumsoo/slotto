@@ -16,7 +16,7 @@ export default function SignupPage() {
       password: formData.get("password"),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }
-    const response = await fetch('http://localhost:3001/api/users/signup', {
+    const response = await fetch('/api/users/signup', {
       method: 'POST',
       headers: { "Content-type" : "application/json" },
       body: JSON.stringify(body),

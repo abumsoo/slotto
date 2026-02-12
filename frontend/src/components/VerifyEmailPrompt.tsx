@@ -10,7 +10,7 @@ export function VerifyEmailPrompt({ onClose }: VerifyEmailPromptProps) {
   const router = useRouter();
 
   function handleVerify() {
-    fetch("http://localhost:3001/api/users/resend-verification", {
+    fetch('/api/users/resend-verification', {
       method: "POST",
       credentials: "include",
     }).catch(console.error);
