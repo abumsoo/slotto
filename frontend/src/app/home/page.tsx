@@ -2,12 +2,15 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PostCard, Post } from "@/components/PostCard";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { Toast } from "@/components/Toast";
 import { VerifyEmailPrompt } from "@/components/VerifyEmailPrompt";
 import { PostForm } from "@/components/PostForm";
+import { ReferenceModal } from "@/components/ReferenceModal";
+import { ChainNav } from "@/components/ChainNav";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -17,9 +20,20 @@ export default function HomePage() {
   const [hasPostedToday, setHasPostedToday] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showVerifyEmail, setShowVerifyEmail] = useState(false);
+  const [referencedPost, setReferencedPost] = useState<Post | null>(null);
+  const [viewingReference, setViewingReference] = useState<Post | null>(null);
+  const [navStack, setNavStack] = useState<number[]>([]);
 
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  const postsMap = useMemo(() => {
+    const map = new Map<number, Post>();
+    for (const post of posts) {
+      map.set(post.id, post);
+    }
+    return map;
+  }, [posts]);
 
   async function logout() {
     await fetch('/api/users/logout', {
@@ -30,13 +44,14 @@ export default function HomePage() {
   }
 
   function handleNewPost(newPost: Post) {
-    setPosts([newPost, ...posts]);
+    setReferencedPost(null);
+    fetchPosts();
     setToast("Posted!");
     setHighlightedPostId(newPost.id);
     setHasPostedToday(true);
   }
 
-  useEffect(() => {
+  function fetchPosts() {
     fetch('/api/posts', {
       credentials: 'include',
     })
@@ -49,6 +64,10 @@ export default function HomePage() {
           if (postedToday) setHasPostedToday(true);
         }
       });
+  }
+
+  useEffect(() => {
+    fetchPosts();
   }, [user]);
 
   if (loading) return null;
@@ -75,11 +94,56 @@ export default function HomePage() {
     setHasPostedToday(true);
   }
 
+  function handleReference(post: Post) {
+    if (!user) { setShowLoginPrompt(true); return; }
+    setReferencedPost(post);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleViewReference(referencedPostId: number) {
+    const post = postsMap.get(referencedPostId);
+    if (post) {
+      setViewingReference(post);
+    }
+  }
+
+  function handleGoTo(postId: number) {
+    // Push current scroll position context (the post we're navigating away from)
+    setNavStack(prev => [...prev, viewingReference ? viewingReference.id : postId]);
+    setViewingReference(null);
+    scrollToPost(postId);
+  }
+
+  function handleBack() {
+    const stack = [...navStack];
+    const postId = stack.pop();
+    setNavStack(stack);
+    if (postId !== undefined) {
+      scrollToPost(postId);
+    }
+  }
+
+  function handleOriginal() {
+    const first = navStack[0];
+    setNavStack([]);
+    if (first !== undefined) {
+      scrollToPost(first);
+    }
+  }
+
+  function scrollToPost(postId: number) {
+    const el = document.getElementById(`post-${postId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('animate-highlight-fade');
+      setTimeout(() => el.classList.remove('animate-highlight-fade'), 2000);
+    }
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-foreground">Slothy</h2>
+        <h2 className="text-xl font-semibold text-foreground">Eslo</h2>
         <div className="flex items-center gap-3">
           {user ? (
             <>
@@ -90,6 +154,8 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </a>
+              <NotificationBell />
+              <a href="/profile" className="text-sm text-primary hover:opacity-80">Profile</a>
               <button onClick={logout} className="px-4 py-2 text-accent hover:opacity-80">Logout</button>
             </>
           ) : (
@@ -103,7 +169,7 @@ export default function HomePage() {
       {hasPostedToday ? (
         <div className="bg-card rounded-lg shadow-sm border border-border p-4 text-center space-y-1">
           <p className="text-foreground font-semibold">You&apos;ve posted today!</p>
-          <p className="text-sm text-muted-foreground">Enjoy what others have posted and post again tomorrow.</p>
+          <p className="text-sm text-muted-foreground">Your post will last 3 days unless others quote it. Enjoy what others have posted and post again tomorrow.</p>
         </div>
       ) : (
         <PostForm
@@ -111,15 +177,40 @@ export default function HomePage() {
           onLoginRequired={() => setShowLoginPrompt(true)}
           onVerifyRequired={() => setShowVerifyEmail(true)}
           isLoggedIn={!!user}
+          referencedPost={referencedPost}
+          onClearReference={() => setReferencedPost(null)}
         />
       )}
       <div className="space-y-4">
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} onRepost={repostHandler} highlighted={post.id === highlightedPostId} />
+          <PostCard
+            key={post.id}
+            post={post}
+            onRepost={repostHandler}
+            onReference={handleReference}
+            onViewReference={handleViewReference}
+            referenceDisabled={!!referencedPost}
+            actionsDisabled={hasPostedToday}
+            highlighted={post.id === highlightedPostId}
+          />
         ))}
       </div>
       {showLoginPrompt && <LoginPrompt onClose={() => setShowLoginPrompt(false)} />}
       {showVerifyEmail && <VerifyEmailPrompt onClose={() => setShowVerifyEmail(false)} />}
+      {viewingReference && (
+        <ReferenceModal
+          post={viewingReference}
+          onClose={() => setViewingReference(null)}
+          onGoTo={handleGoTo}
+        />
+      )}
+      {navStack.length > 0 && (
+        <ChainNav
+          onBack={handleBack}
+          onOriginal={handleOriginal}
+          showOriginal={navStack.length > 1}
+        />
+      )}
       {toast && <Toast message={toast} onClose={() => { setToast(null); setHighlightedPostId(null); }} />}
     </div>
   )

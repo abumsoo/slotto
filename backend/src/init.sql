@@ -23,8 +23,23 @@ CREATE TABLE posts (
   is_repost BOOLEAN DEFAULT FALSE,
   original_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL,
   original_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  referenced_post_id INTEGER REFERENCES posts(id) ON DELETE SET NULL,
+  short_id VARCHAR(10) UNIQUE NOT NULL DEFAULT substr(md5(random()::text), 1, 8),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_posts_user_id ON posts(user_id);
 CREATE INDEX idx_posts_created_at ON posts(created_at);
+CREATE INDEX idx_posts_referenced_post_id ON posts(referenced_post_id);
+
+CREATE TABLE notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  referenced_post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_read ON notifications(user_id, read);

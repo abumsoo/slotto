@@ -232,13 +232,32 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
     res.status(429).json({ message: "You already posted today"});
     return;
   }
+  const referencedPostId = body.referenced_post_id ? parseInt(body.referenced_post_id) : null;
+  if (referencedPostId) {
+    const exists = await db.oneOrNone('SELECT id FROM posts WHERE id = $1', [referencedPostId]);
+    if (!exists) {
+      return res.status(400).json({ message: 'Referenced post not found' });
+    }
+  }
   const post = await db.one(`
   INSERT INTO posts
-  (content, user_id, image_url, is_repost, original_post_id, original_user_id)
-  VALUES ($1, $2, $3, $4, $5, $6)
+  (content, user_id, image_url, is_repost, original_post_id, original_user_id, referenced_post_id)
+  VALUES ($1, $2, $3, $4, $5, $6, $7)
   RETURNING *`,
-    [body.content, req.user.id, imageUrl, body.is_repost, body.original_post_id, body.original_user_id]);
+    [body.content, req.user.id, imageUrl, body.is_repost, body.original_post_id, body.original_user_id, referencedPostId]);
   await db.none('UPDATE users SET last_post_date = NOW() WHERE id=$1', [req.user.id]);
+
+  // Create notification if referencing another user's post
+  if (referencedPostId) {
+    const refPost = await db.oneOrNone('SELECT user_id FROM posts WHERE id = $1', [referencedPostId]);
+    if (refPost && refPost.user_id !== req.user.id) {
+      await db.none(
+        'INSERT INTO notifications (user_id, actor_id, post_id, referenced_post_id) VALUES ($1, $2, $3, $4)',
+        [refPost.user_id, req.user.id, post.id, referencedPostId]
+      );
+    }
+  }
+
   res.status(201).json(post);
 
 })
@@ -269,17 +288,93 @@ router.post('/repost', authenticate, async (req: Request, res: Response) => {
 // feed
 router.get('/posts', async (req: Request, res: Response) => {
   const posts = await db.any(`
-  SELECT id, user_id, content, image_url, created_at, is_repost, original_post_id, original_user_id
-  FROM posts
-  WHERE created_at > NOW() - INTERVAL '3 days'
-  ORDER BY created_at
-  DESC LIMIT 10`);
+  WITH RECURSIVE feed AS (
+    SELECT p.* FROM posts p WHERE p.created_at > NOW() - INTERVAL '3 days'
+    UNION
+    SELECT ref.* FROM posts ref
+    JOIN feed f ON f.referenced_post_id = ref.id
+  )
+  SELECT f.*, u.username,
+    (f.created_at > NOW() - INTERVAL '3 days') AS is_feed
+  FROM feed f
+  JOIN users u ON f.user_id = u.id
+  ORDER BY f.created_at DESC`);
   res.json(posts);
 })
 
 // users:verify
 // users:reset-password-request
 // users:reset-password
+
+// User's own posts (all time)
+router.get('/users/me/posts', authenticate, async (req: Request, res: Response) => {
+  const posts = await db.any(
+    `SELECT p.*, u.username FROM posts p
+     JOIN users u ON p.user_id = u.id
+     WHERE p.user_id = $1 AND p.created_at > NOW() - INTERVAL '3 days'
+     ORDER BY p.created_at DESC`,
+    [req.user!.id]
+  );
+  res.json(posts);
+});
+
+// Thread view: ancestors + descendants of a post
+router.get('/posts/:id/thread', async (req: Request, res: Response) => {
+  const postId = parseInt(req.params.id as string);
+  const thread = await db.any(`
+    WITH RECURSIVE descendants AS (
+      SELECT p.* FROM posts p WHERE p.referenced_post_id = $1
+      UNION ALL
+      SELECT child.* FROM posts child
+      JOIN descendants d ON child.referenced_post_id = d.id
+    )
+    SELECT d.*, u.username FROM descendants d
+    JOIN users u ON d.user_id = u.id
+    ORDER BY d.created_at ASC`,
+    [postId]
+  );
+  res.json(thread);
+});
+
+// Notifications
+router.get('/notifications', authenticate, async (req: Request, res: Response) => {
+  const notifications = await db.any(`
+    SELECT n.*, u.username AS actor_username,
+           substring(p.content from 1 for 100) AS post_snippet
+    FROM notifications n
+    JOIN users u ON n.actor_id = u.id
+    JOIN posts p ON n.post_id = p.id
+    WHERE n.user_id = $1
+    ORDER BY n.created_at DESC
+    LIMIT 50`,
+    [req.user!.id]
+  );
+  res.json(notifications);
+});
+
+router.get('/notifications/unread-count', authenticate, async (req: Request, res: Response) => {
+  const { count } = await db.one(
+    'SELECT COUNT(*)::int AS count FROM notifications WHERE user_id = $1 AND read = FALSE',
+    [req.user!.id]
+  );
+  res.json({ count });
+});
+
+router.patch('/notifications/read', authenticate, async (req: Request, res: Response) => {
+  const { ids } = req.body || {};
+  if (ids && Array.isArray(ids) && ids.length > 0) {
+    await db.none(
+      'UPDATE notifications SET read = TRUE WHERE user_id = $1 AND id IN ($2:csv)',
+      [req.user!.id, ids]
+    );
+  } else {
+    await db.none(
+      'UPDATE notifications SET read = TRUE WHERE user_id = $1',
+      [req.user!.id]
+    );
+  }
+  res.json({ message: 'Marked as read' });
+});
 
 // Database test endpoint
 // TODO: Add rate limiting for production use (e.g., express-rate-limit)

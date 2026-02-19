@@ -17,7 +17,7 @@ export default function Home() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm text-center space-y-8">
         <div className="space-y-3">
-          <h1 className="text-4xl font-bold text-foreground">Slothy</h1>
+          <h1 className="text-4xl font-bold text-foreground">Eslo</h1>
           <p className="text-muted-foreground">Slow social media — max one post per day.</p>
         </div>
         <div className="flex flex-col gap-3">
