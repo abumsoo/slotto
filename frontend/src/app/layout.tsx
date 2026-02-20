@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { BottomNav } from "@/components/BottomNav";
+import { SideNav } from "@/components/SideNav";
 
 export const metadata: Metadata = {
   title: "Eslo",
@@ -14,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <SideNav />
         {children}
+        <BottomNav />
       </body>
     </html>
   );

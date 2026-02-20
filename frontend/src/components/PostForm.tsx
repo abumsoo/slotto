@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Post } from "@/components/PostCard";
 import { MarkdownContent } from "@/components/MarkdownContent";
 
@@ -11,38 +11,17 @@ interface PostFormProps {
   onLoginRequired: () => void;
   onVerifyRequired: () => void;
   isLoggedIn: boolean;
+  isVerified: boolean;
   referencedPost?: Post | null;
   onClearReference?: () => void;
 }
 
-export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn, referencedPost, onClearReference }: PostFormProps) {
+export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn, isVerified, referencedPost, onClearReference }: PostFormProps) {
   const [postContent, setPostContent] = useState("");
   const [postImage, setPostImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [error, setError] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const prevReferencedPostRef = useRef<Post | null | undefined>(null);
-
-  useEffect(() => {
-    if (referencedPost && referencedPost !== prevReferencedPostRef.current && textareaRef.current) {
-      const textarea = textareaRef.current;
-      const linkText = `[↗ ${referencedPost.short_id} - @${referencedPost.username}](#post-${referencedPost.id})`;
-      const pos = textarea.selectionStart ?? postContent.length;
-      const before = postContent.slice(0, pos);
-      const after = postContent.slice(pos);
-      const space = before.length > 0 && !before.endsWith(' ') && !before.endsWith('\n') ? ' ' : '';
-      const newContent = before + space + linkText + after;
-      setPostContent(newContent);
-      // Place cursor after inserted text
-      const cursorPos = (before + space + linkText).length;
-      requestAnimationFrame(() => {
-        textarea.focus();
-        textarea.setSelectionRange(cursorPos, cursorPos);
-      });
-    }
-    prevReferencedPostRef.current = referencedPost;
-  }, [referencedPost]);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -65,12 +44,6 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
     e.preventDefault();
     if (!postContent.trim() && !postImage) return;
     if (!isLoggedIn) { onLoginRequired(); return; }
-
-    const refLinks = postContent.match(/#post-\d+/g);
-    if (refLinks && new Set(refLinks).size > 1) {
-      setError("Only one post can be referenced at a time");
-      return;
-    }
 
     setIsPosting(true);
     setError("");
@@ -112,29 +85,31 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card rounded-lg shadow-sm border-2 border-muted-foreground/30 p-4 space-y-3">
-      <textarea
-        ref={textareaRef}
-        value={postContent}
-        onChange={(e) => { setPostContent(e.target.value); if (error) setError(""); }}
-        maxLength={MAX_LENGTH}
-        placeholder="What's on your mind?"
-        className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-        rows={3}
-      />
+    <form onSubmit={handleSubmit} className="bg-card border-y border-muted-foreground/30 p-4 space-y-3">
       {referencedPost && (
-        <div className="flex items-center gap-2 text-xs text-primary">
-          <span>↗ Referencing @{referencedPost.username}</span>
-          <button type="button" onClick={onClearReference} className="hover:text-foreground">&times;</button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-primary">Replying to @{referencedPost.username}</span>
+            <button type="button" onClick={onClearReference} className="text-xs text-muted-foreground hover:text-foreground">&times;</button>
+          </div>
+          <div className="p-3 bg-muted rounded-lg border border-muted-foreground/20">
+            <p className="text-xs text-muted-foreground mb-1">@{referencedPost.username}</p>
+            <p className="text-sm text-muted-foreground line-clamp-3">{referencedPost.content.slice(0, 200)}{referencedPost.content.length > 200 ? '...' : ''}</p>
+          </div>
         </div>
       )}
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-muted-foreground">
-          {postContent.length}/{MAX_LENGTH}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          Supports **bold**, *italic*, [links](url), and lists
-        </span>
+      <div className="relative">
+        <textarea
+          value={postContent}
+          onChange={(e) => { setPostContent(e.target.value); if (error) setError(""); }}
+          maxLength={MAX_LENGTH}
+          placeholder="What's on your mind today?"
+          className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+          rows={3}
+        />
+        {(!isLoggedIn || !isVerified) && (
+          <div className="absolute inset-0 cursor-text" onClick={!isLoggedIn ? onLoginRequired : onVerifyRequired} />
+        )}
       </div>
       {postContent.trim() && (
         <div className="bg-muted rounded-lg px-4 py-3 text-foreground">

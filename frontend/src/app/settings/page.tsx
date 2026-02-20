@@ -2,10 +2,18 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 import { DeleteAccountModal } from "@/components/DeleteAccountModal";
+
 
 export default function SettingsPage() {
   const { user, loading, refreshUser } = useAuth({ redirectTo: "/login" });
+  const router = useRouter();
+
+  function handleLogout() {
+    fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
+      .then(() => router.push('/login'));
+  }
 
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
@@ -113,13 +121,9 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <a href="/home" className="text-muted-foreground hover:text-foreground">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </a>
+      <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Settings</h1>
+        <button onClick={handleLogout} className="text-sm text-muted-foreground hover:text-foreground">Log out</button>
       </div>
 
       {/* Change Name & Username */}

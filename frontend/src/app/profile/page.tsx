@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { PostCard, Post } from '@/components/PostCard';
 import { ThreadView } from '@/components/ThreadView';
-import { NotificationBell } from '@/components/NotificationBell';
+
 
 export default function ProfilePage() {
   const { user, loading } = useAuth({ redirectTo: '/login' });
@@ -39,27 +39,15 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-foreground">Your Posts</h2>
-        <div className="flex items-center gap-3">
-          <NotificationBell />
-          <a href="/home" className="text-sm text-primary hover:opacity-80">Feed</a>
-          <a href="/settings" className="text-muted-foreground hover:text-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </a>
-        </div>
-      </div>
+    <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20 space-y-6">
+      <h2 className="text-xl font-semibold text-foreground">Your Posts</h2>
 
       {posts.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">You haven&apos;t posted anything yet.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="divide-y divide-border">
           {posts.map(post => (
-            <div key={post.id}>
+            <div key={post.id} className="py-4 first:pt-0">
               <PostCard
                 post={post}
                 highlighted={post.id === highlightPostId}
