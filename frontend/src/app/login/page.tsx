@@ -1,9 +1,11 @@
 "use client";
-import { useState, FormEvent } from "react";
-import { useRouter } from 'next/navigation';
+import { useState, FormEvent, Suspense } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+function LoginForm() {
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const resetSuccess = searchParams.get("reset") === "1";
 
   const router = useRouter();
 
@@ -56,12 +58,26 @@ export default function LoginPage() {
             Log In
           </button>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {resetSuccess && <p className="text-green-500 text-sm text-center">Password reset! You can now log in.</p>}
         </form>
-        <p className="text-sm text-muted-foreground text-center">
-          Don&apos;t have an account?{" "}
-          <a href="/signup" className="text-primary hover:underline">Sign up</a>
-        </p>
+        <div className="text-sm text-muted-foreground text-center space-y-2">
+          <p>
+            <a href="/forgot-password" className="text-primary hover:underline">Forgot password?</a>
+          </p>
+          <p>
+            Don&apos;t have an account?{" "}
+            <a href="/signup" className="text-primary hover:underline">Sign up</a>
+          </p>
+        </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -12,7 +12,9 @@ CREATE TABLE users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   email_verified BOOLEAN DEFAULT FALSE,
   verification_token TEXT,
-  verification_token_expires TIMESTAMP WITH TIME ZONE
+  verification_token_expires TIMESTAMP WITH TIME ZONE,
+  reset_token TEXT,
+  reset_token_expires TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE posts (

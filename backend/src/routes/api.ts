@@ -14,28 +14,31 @@ router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'API is working!' });
 });
 
-async function sendTestEmail(verificationToken: string, recipientEmail: string) {
+async function sendEmail(subject: string, link: string, recipientEmail: string) {
   const testAccount = await nodemailer.createTestAccount();
   const transporter = nodemailer.createTransport({
-    host: testAccount.smtp.host, // "smtp.ethereal.email",
-    port: testAccount.smtp.port, // 587,
-    secure: testAccount.smtp.secure, // false,
-    auth: {
-      user: testAccount.user, // "maddison53@ethereal.email",
-      pass: testAccount.pass, // "jn7jnAPss4f63QBp6D",
-    },
+    host: testAccount.smtp.host,
+    port: testAccount.smtp.port,
+    secure: testAccount.smtp.secure,
+    auth: { user: testAccount.user, pass: testAccount.pass },
   });
   const info = await transporter.sendMail({
-    from: '"Test Sender" <test@example.com>',
+    from: '"Slothy" <no-reply@slothy.app>',
     to: recipientEmail,
-    subject: "Test email",
-    text: `http://localhost:3000/verify?token=${verificationToken}`,
-    html: `<b>http://localhost:3000/verify?token=${verificationToken}</b>`,
-  })
+    subject,
+    text: link,
+    html: `<b><a href="${link}">${link}</a></b>`,
+  });
   console.log("Message sent:", info.messageId);
-  
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  console.log("Preview URL: %s", previewUrl);
+  console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+}
+
+async function sendTestEmail(verificationToken: string, recipientEmail: string) {
+  await sendEmail(
+    'Verify your Slothy account',
+    `http://localhost:3000/verify?token=${verificationToken}`,
+    recipientEmail,
+  );
 }
 
 router.post('/users/signup', async (req: Request, res: Response) => {
@@ -291,9 +294,52 @@ router.get('/posts', async (req: Request, res: Response) => {
   res.json(posts);
 })
 
-// users:verify
-// users:reset-password-request
-// users:reset-password
+router.post('/users/reset-password-request', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+  const user = await db.oneOrNone('SELECT id, email FROM users WHERE email = $1', [email]);
+  // Always respond the same way to avoid leaking whether an account exists
+  if (!user) {
+    return res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+  }
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  await db.none(
+    'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
+    [resetToken, expires, user.id]
+  );
+  sendEmail(
+    'Reset your Slothy password',
+    `http://localhost:3000/reset-password?token=${resetToken}`,
+    user.email,
+  ).catch(console.error);
+  res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+});
+
+router.post('/users/reset-password', async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) {
+    return res.status(400).json({ message: 'Token and new password are required' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters' });
+  }
+  const user = await db.oneOrNone(
+    'SELECT id FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
+    [token]
+  );
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid or expired reset link' });
+  }
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await db.none(
+    'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2',
+    [newHash, user.id]
+  );
+  res.json({ message: 'Password reset successfully. You can now log in.' });
+});
 
 // User's own posts (all time)
 router.get('/users/me/posts', authenticate, async (req: Request, res: Response) => {

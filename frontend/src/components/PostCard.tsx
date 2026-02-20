@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { timeAgo } from "@/helpers";
 import { MarkdownContent } from "@/components/MarkdownContent";
@@ -30,6 +30,14 @@ interface PostCardProps {
 export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
 
+  useEffect(() => {
+    if (!showImage) return;
+    window.history.pushState({}, '');
+    function handlePopState() { setShowImage(false); }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showImage]);
+
   return (
     <div id={`post-${post.id}`} className={`bg-card p-4 hover:bg-muted ${highlighted ? 'ring-2 ring-primary ring-inset' : ''}`}>
       <p className="text-sm text-muted-foreground mb-3">@{post.username}</p>
@@ -58,7 +66,7 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
       {showImage && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center overflow-auto">
           <button
-            onClick={() => setShowImage(false)}
+            onClick={() => window.history.back()}
             className="fixed top-4 right-4 text-white bg-black/50 hover:bg-white hover:text-black rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-colors"
           >
             <X size={20} />
