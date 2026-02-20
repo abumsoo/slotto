@@ -112,7 +112,13 @@ router.get('/users/me', authenticate, async(req, res) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Not authenticated' });
   }
-  const user = await db.one('SELECT id, username, name, email, email_verified AS verified FROM users WHERE id=$1', [req.user.id]);
+  const user = await db.one(`
+    SELECT id, username, name, email, email_verified AS verified,
+      (last_post_date IS NOT NULL AND
+        (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date
+      ) AS "hasPostedToday"
+    FROM users WHERE id = $1
+  `, [req.user.id]);
   res.json(user);
 })
 

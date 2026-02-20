@@ -43,18 +43,12 @@ export default function HomePage() {
     fetch('/api/posts', {
       credentials: 'include',
     })
-      .then((res) => (res.json()))
-      .then((data) => {
-        setPosts(data);
-        if (user) {
-          const today = new Date().toDateString();
-          const postedToday = data.some((p: Post) => p.user_id === user.id && new Date(p.created_at).toDateString() === today);
-          if (postedToday) setHasPostedToday(true);
-        }
-      });
+      .then((res) => res.json())
+      .then((data) => setPosts(data));
   }
 
   useEffect(() => {
+    if (user?.hasPostedToday) setHasPostedToday(true);
     fetchPosts();
   }, [user]);
 

@@ -9,6 +9,7 @@ interface User {
   name: string;
   email: string;
   verified: boolean;
+  hasPostedToday: boolean;
 }
 
 export function useAuth(options?: { redirectTo?: string }) {
