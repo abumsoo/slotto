@@ -1,15 +1,13 @@
 import pgPromise from 'pg-promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is not set');
+}
 
 const pgp = pgPromise({});
-
-const config = {
-  host: 'localhost',
-  port: 5432,
-  database: 'dailyposts',
-  user: 'dev',
-  password: 'dev',
-};
-
-const db = pgp(config);
+const db = pgp(process.env.DATABASE_URL);
 
 export default db;
