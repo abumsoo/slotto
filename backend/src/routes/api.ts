@@ -241,10 +241,10 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
   }
   const post = await db.one(`
   INSERT INTO posts
-  (content, user_id, image_url, is_repost, original_post_id, original_user_id, referenced_post_id)
-  VALUES ($1, $2, $3, $4, $5, $6, $7)
+  (content, user_id, image_url, referenced_post_id)
+  VALUES ($1, $2, $3, $4)
   RETURNING *`,
-    [body.content, req.user.id, imageUrl, body.is_repost, body.original_post_id, body.original_user_id, referencedPostId]);
+    [body.content, req.user.id, imageUrl, referencedPostId]);
   await db.none('UPDATE users SET last_post_date = NOW() WHERE id=$1', [req.user.id]);
 
   // Create notification if referencing another user's post
@@ -263,28 +263,6 @@ router.post('/post', upload.single('image'), authenticate, async (req: Request, 
 })
 
 
-// repost
-router.post('/repost', authenticate, async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(403).json({ message: 'Please login to repost' });
-  }
-  const { already_posted_today } = await db.one('SELECT (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date AS already_posted_today FROM users WHERE id=$1', [req.user.id]);
-  if (already_posted_today) {
-    res.status(429).json({ message: "You already posted today"});
-    return;
-  }
-  const post = await db.oneOrNone(`
-  INSERT INTO posts (content, user_id, image_url, is_repost, original_post_id, original_user_id)
-  SELECT content, $1, image_url, TRUE, id, user_id
-  FROM posts
-  WHERE id = $2
-  RETURNING *`, [ req.user.id, req.body.postId]);
-  if (!post) {
-    return res.status(404).json({ message: 'Repost failed' });
-  }
-  res.status(201).json(post);
-});
-
 // feed
 router.get('/posts', async (req: Request, res: Response) => {
   const posts = await db.any(`
@@ -295,9 +273,14 @@ router.get('/posts', async (req: Request, res: Response) => {
     JOIN feed f ON f.referenced_post_id = ref.id
   )
   SELECT f.*, u.username,
-    (f.created_at > NOW() - INTERVAL '3 days') AS is_feed
+    (f.created_at > NOW() - INTERVAL '3 days') AS is_feed,
+    rp.content AS parent_content,
+    rpu.username AS parent_username,
+    rp.id AS parent_id
   FROM feed f
   JOIN users u ON f.user_id = u.id
+  LEFT JOIN posts rp ON f.referenced_post_id = rp.id
+  LEFT JOIN users rpu ON rp.user_id = rpu.id
   ORDER BY f.created_at DESC`);
   res.json(posts);
 })
@@ -309,8 +292,14 @@ router.get('/posts', async (req: Request, res: Response) => {
 // User's own posts (all time)
 router.get('/users/me/posts', authenticate, async (req: Request, res: Response) => {
   const posts = await db.any(
-    `SELECT p.*, u.username FROM posts p
+    `SELECT p.*, u.username,
+      rp.content AS parent_content,
+        rpu.username AS parent_username,
+      rp.id AS parent_id
+     FROM posts p
      JOIN users u ON p.user_id = u.id
+     LEFT JOIN posts rp ON p.referenced_post_id = rp.id
+     LEFT JOIN users rpu ON rp.user_id = rpu.id
      WHERE p.user_id = $1 AND p.created_at > NOW() - INTERVAL '3 days'
      ORDER BY p.created_at DESC`,
     [req.user!.id]

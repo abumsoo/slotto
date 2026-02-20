@@ -27,7 +27,7 @@ export function MarkdownContent({ content, onPostLink }: { content: string; onPo
                     if (el) {
                       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       el.classList.add('animate-highlight-fade');
-                      setTimeout(() => el.classList.remove('animate-highlight-fade'), 2000);
+                      setTimeout(() => el.classList.remove('animate-highlight-fade'), 6000);
                     }
                   }
                 }}

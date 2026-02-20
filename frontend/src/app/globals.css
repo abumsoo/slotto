@@ -3,7 +3,7 @@
 :root {
   --background: #fdf6f9;
   --foreground: #4a4a5a;
-  --card: #ffffff;
+  --card: #fdf6f9;
   --card-foreground: #4a4a5a;
   --primary: #b8a9c9;
   --primary-foreground: #ffffff;
@@ -32,7 +32,7 @@
   :root {
     --background: #2d2a3e;
     --foreground: #e8e0ec;
-    --card: #3d3a4e;
+    --card: #2d2a3e;
     --card-foreground: #e8e0ec;
     --primary: #9b8bb8;
     --primary-foreground: #ffffff;
@@ -61,19 +61,7 @@ body {
   }
 }
 
-@keyframes highlight-fade {
-  0% {
-    background-color: color-mix(in srgb, var(--primary) 25%, transparent);
-  }
-  100% {
-    background-color: transparent;
-  }
-}
-
 .animate-toast-slide-in {
   animation: toast-slide-in 0.3s ease-out;
 }
 
-.animate-highlight-fade {
-  animation: highlight-fade 2s ease-out;
-}

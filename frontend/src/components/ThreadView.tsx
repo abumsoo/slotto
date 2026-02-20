@@ -41,7 +41,6 @@ function ThreadNodeView({ node, highlightPostId }: { node: ThreadNode; highlight
     <div>
       <div className={`text-sm${node.post.id === highlightPostId ? ' bg-primary/10 rounded p-2 -ml-2' : ''}`}>
         <span className="text-muted-foreground">@{node.post.username}</span>
-        <span className="text-muted-foreground/50 font-mono text-xs ml-2">{node.post.short_id}</span>
         <div className="text-card-foreground"><MarkdownContent content={node.post.content} /></div>
         <span className="text-xs text-muted-foreground">{timeAgo(node.post.created_at)}</span>
       </div>
