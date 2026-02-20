@@ -359,6 +359,26 @@ router.get('/users/me/posts', authenticate, async (req: Request, res: Response) 
   res.json(posts);
 });
 
+// Single post by ID
+router.get('/posts/:id', async (req: Request, res: Response) => {
+  const postId = parseInt(req.params.id as string);
+  const post = await db.oneOrNone(`
+    SELECT p.*, u.username,
+      (p.created_at > NOW() - INTERVAL '3 days') AS is_feed,
+      rp.content AS parent_content,
+      rpu.username AS parent_username,
+      rp.id AS parent_id
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    LEFT JOIN posts rp ON p.referenced_post_id = rp.id
+    LEFT JOIN users rpu ON rp.user_id = rpu.id
+    WHERE p.id = $1`,
+    [postId]
+  );
+  if (!post) return res.status(404).json({ message: 'Post not found' });
+  res.json(post);
+});
+
 // Thread view: ancestors + descendants of a post
 router.get('/posts/:id/thread', async (req: Request, res: Response) => {
   const postId = parseInt(req.params.id as string);
@@ -419,7 +439,7 @@ router.patch('/notifications/read', authenticate, async (req: Request, res: Resp
 
 // Database test endpoint
 // TODO: Add rate limiting for production use (e.g., express-rate-limit)
-router.get('/db-test', async (req: Request, res: Response) => {
+router.get('/db-test', async (_req: Request, res: Response) => {
   try {
     const { value } = await db.one('SELECT 123 as value');
     res.json({ 

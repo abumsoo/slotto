@@ -85,7 +85,7 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card border-y border-muted-foreground/30 p-4 space-y-3">
+    <form onSubmit={handleSubmit} className="bg-card py-4 space-y-3">
       {referencedPost && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -98,57 +98,61 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
           </div>
         </div>
       )}
-      <div className="relative">
-        <textarea
-          value={postContent}
-          onChange={(e) => { setPostContent(e.target.value); if (error) setError(""); }}
-          maxLength={MAX_LENGTH}
-          placeholder="What's on your mind today?"
-          className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-          rows={3}
-        />
-        {(!isLoggedIn || !isVerified) && (
-          <div className="absolute inset-0 cursor-text" onClick={!isLoggedIn ? onLoginRequired : onVerifyRequired} />
-        )}
-      </div>
-      {postContent.trim() && (
-        <div className="bg-muted rounded-lg px-4 py-3 text-foreground">
-          <MarkdownContent content={postContent} />
+      <div className="rounded-xl border border-muted-foreground/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary transition-shadow">
+        <div className="relative">
+          <textarea
+            value={postContent}
+            onChange={(e) => { setPostContent(e.target.value); if (error) setError(""); }}
+            maxLength={MAX_LENGTH}
+            placeholder="What's on your mind today?"
+            className="w-full bg-transparent px-4 pt-3 pb-2 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
+            rows={8}
+          />
+          {(!isLoggedIn || !isVerified) && (
+            <div className="absolute inset-0 cursor-text" onClick={!isLoggedIn ? onLoginRequired : onVerifyRequired} />
+          )}
         </div>
-      )}
-      {imagePreview && (
-        <div className="relative inline-block">
-          <img src={imagePreview} alt="Preview" className="max-h-48 rounded-lg" />
+        {postContent.trim() && (
+          <div className="px-4 py-3 border-t border-muted-foreground/20 text-foreground">
+            <MarkdownContent content={postContent} />
+          </div>
+        )}
+        {imagePreview && (
+          <div className="px-4 pb-3">
+            <div className="relative inline-block">
+              <img src={imagePreview} alt="Preview" className="max-h-48 rounded-lg" />
+              <button
+                type="button"
+                onClick={clearImage}
+                className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/70"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-muted-foreground/20 bg-muted/40">
+          <label className="cursor-pointer p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </label>
           <button
-            type="button"
-            onClick={clearImage}
-            className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-black/70"
+            type="submit"
+            disabled={isPosting || (!postContent.trim() && !postImage)}
+            className="px-4 py-1.5 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ×
+            {isPosting ? 'Posting...' : 'Post'}
           </button>
         </div>
-      )}
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      <div className="flex items-center justify-between">
-        <label className="cursor-pointer py-2 text-muted-foreground hover:text-foreground">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </label>
-        <button
-          type="submit"
-          disabled={isPosting || (!postContent.trim() && !postImage)}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isPosting ? 'Posting...' : 'Post'}
-        </button>
       </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </form>
   );
 }
