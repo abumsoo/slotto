@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { Post } from "@/components/PostCard";
 import { MarkdownContent } from "@/components/MarkdownContent";
 
@@ -40,7 +40,7 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
     setImagePreview(null);
   }
 
-  async function handleSubmit(e: React.SubmitEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!postContent.trim() && !postImage) return;
     if (!isLoggedIn) { onLoginRequired(); return; }
