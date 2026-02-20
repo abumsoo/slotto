@@ -251,6 +251,18 @@ describe('GET /api/posts', () => {
 // ---------------------------------------------------------------------------
 
 describe('POST /api/post', () => {
+  it('returns 401 for unauthenticated requests before processing any upload', async () => {
+    mockAuth.mockImplementationOnce((_req: any, res: any) => {
+      res.status(401).json({ message: 'Not authenticated' });
+    });
+
+    const res = await request(createTestApp())
+      .post('/api/post')
+      .send({ content: 'Hello!' });
+
+    expect(res.status).toBe(401);
+  });
+
   it('returns 400 for empty content', async () => {
     const res = await request(createTestApp())
       .post('/api/post')

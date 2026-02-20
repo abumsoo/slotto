@@ -215,7 +215,7 @@ const upload = multer({
   }
 });
 
-router.post('/post', upload.single('image'), authenticate, async (req: Request, res: Response) => {
+router.post('/post', authenticate, upload.single('image'), async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(403).json({ message: 'Please login to post' });
   }
