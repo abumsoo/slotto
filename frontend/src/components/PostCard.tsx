@@ -24,13 +24,14 @@ interface PostCardProps {
   onReply?: (post: Post) => void;
   onViewReference?: (postId: number) => void;
   actionsDisabled?: boolean;
+  highlighted?: boolean;
 }
 
-export function PostCard({ post, onReply, onViewReference, actionsDisabled }: PostCardProps) {
+export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
 
   return (
-    <div id={`post-${post.id}`} className="bg-card p-4 hover:bg-muted">
+    <div id={`post-${post.id}`} className={`bg-card p-4 hover:bg-muted ${highlighted ? 'ring-2 ring-primary ring-inset' : ''}`}>
       <p className="text-sm text-muted-foreground mb-3">@{post.username}</p>
       {post.parent_content && post.parent_id && (
         <div
