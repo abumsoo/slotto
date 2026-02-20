@@ -24,7 +24,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
   }
 
   try {
-    const payload = jwt.verify(token, 'my-secret-key');
+    const payload = jwt.verify(token, process.env.JWT_SECRET!);
     if (typeof payload === 'string' || typeof payload.id !== 'number') {
       return res.status(401).json({ message: 'Invalid token payload' });
     }
