@@ -81,26 +81,26 @@ router.post('/users/resend-verification', authenticate, async (req: Request, res
 
 router.post('/users/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  const { password_hash, id } = await db.oneOrNone('SELECT id, password_hash FROM users WHERE email = $1', [email]);
-  const match = await bcrypt.compare(password, password_hash)
-  if (password_hash === null || !match) {
-    res.status(401).json({
-      message: "Invalid email or password"
-    })
-  } else {
-    const token = jwt.sign(
-      { id: id },
-      'my-secret-key',
-      { expiresIn: '7d' }
-    )
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 7*24*60*60*1000
-    });
-    res.json({message: 'Login successful'});
+  const user = await db.oneOrNone('SELECT id, password_hash FROM users WHERE email = $1', [email]);
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid email or password' });
   }
+  const match = await bcrypt.compare(password, user.password_hash);
+  if (!match) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+  const token = jwt.sign(
+    { id: user.id },
+    'my-secret-key',
+    { expiresIn: '7d' }
+  );
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 7*24*60*60*1000
+  });
+  res.json({ message: 'Login successful' });
 })
 
 router.post('/users/logout', (req: Request, res: Response) => {

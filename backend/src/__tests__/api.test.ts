@@ -172,16 +172,15 @@ describe('POST /api/users/login', () => {
     expect(res.body.message).toBe('Invalid email or password');
   });
 
-  // BUG: db.oneOrNone returns null for unknown users, but the route destructures
-  // the result before null-checking it — this throws TypeError and crashes the handler.
-  it('returns 500 when the email does not exist (null destructure bug)', async () => {
+  it('returns 401 when the email does not exist', async () => {
     mockDb.oneOrNone.mockResolvedValue(null);
 
     const res = await request(createTestApp())
       .post('/api/users/login')
       .send({ email: 'nobody@example.com', password: 'anything' });
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Invalid email or password');
   });
 });
 
