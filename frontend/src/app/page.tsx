@@ -2,16 +2,20 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
   const { user, loading } = useAuth();
+  const router = useRouter();
 
-  if (loading) return null;
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/home');
+    }
+  }, [loading, user]);
 
-  if (user) {
-    redirect('/home');
-  }
+  if (loading || user) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
