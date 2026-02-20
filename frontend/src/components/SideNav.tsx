@@ -8,8 +8,12 @@ import { useAuth } from '@/hooks/useAuth';
 
 export function SideNav() {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    refreshUser();
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;

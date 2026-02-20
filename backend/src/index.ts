@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -26,6 +26,11 @@ app.use('/uploads', express.static('uploads'));
 // Health check route
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' });
+});
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal server error' });
 });
 
 app.listen(PORT, () => {

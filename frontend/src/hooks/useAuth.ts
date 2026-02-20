@@ -24,6 +24,7 @@ export function useAuth(options?: { redirectTo?: string }) {
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => setUser(data))
       .catch(() => {
+        setUser(null);
         if (options?.redirectTo) {
           router.push(options.redirectTo);
         }
