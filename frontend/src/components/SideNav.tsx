@@ -23,7 +23,30 @@ export function SideNav() {
     return () => clearInterval(interval);
   }, [user]);
 
-  if (loading || !user) return null;
+  if (loading) return null;
+
+  const logo = (
+    <div className="flex items-center gap-2 px-3 mb-4">
+      <span className="text-primary font-bold text-xl">eslo</span>
+      <div className="w-4 h-4 rounded-full bg-primary" />
+    </div>
+  );
+
+  if (!user) {
+    return (
+      <nav className="hidden sm:flex flex-col fixed left-0 top-0 h-full w-48 border-r border-border bg-card z-40 pt-6 px-5">
+        {logo}
+        <div className="flex flex-col gap-2">
+          <Link href="/signup" className="px-2 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium text-center hover:opacity-90 transition-opacity">
+            Sign up
+          </Link>
+          <Link href="/login" className="px-2 py-1.5 rounded-lg border border-border text-foreground text-sm font-medium text-center hover:bg-muted transition-colors">
+            Log in
+          </Link>
+        </div>
+      </nav>
+    );
+  }
 
   const links = [
     { href: '/home', label: 'Home', icon: <Home size={20} /> },
@@ -34,6 +57,7 @@ export function SideNav() {
 
   return (
     <nav className="hidden sm:flex flex-col gap-1 fixed left-0 top-0 h-full w-48 border-r border-border bg-card z-40 pt-6 px-3">
+      {logo}
       {links.map(({ href, label, icon, badge }) => (
         <Link
           key={href}
