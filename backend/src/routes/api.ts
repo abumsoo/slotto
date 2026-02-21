@@ -503,22 +503,4 @@ router.patch('/notifications/read', authenticate, async (req: Request, res: Resp
   res.json({ message: 'Marked as read' });
 });
 
-// Database test endpoint
-// TODO: Add rate limiting for production use (e.g., express-rate-limit)
-router.get('/db-test', async (_req: Request, res: Response) => {
-  try {
-    const { value } = await db.one('SELECT 123 as value');
-    res.json({ 
-      message: 'Database connected successfully!',
-      timestamp: value
-    });
-  } catch (error) {
-    console.error('Database connection error:', error);
-    res.status(500).json({ 
-      error: 'Database connection failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
 export default router;
