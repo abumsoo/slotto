@@ -26,10 +26,8 @@
     "multer": "^2.0.2",
     "nodemailer": "^8.0.0",
     "pg": "^8.17.2",
-    "pg-hstore": "^2.3.4",
     "pg-promise": "^12.3.0",
-    "resend": "^6.9.2",
-    "sequelize": "^6.37.7"
+    "resend": "^6.9.2"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

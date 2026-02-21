@@ -9,11 +9,23 @@ export default function SignupPage() {
   async function onSubmitHandler(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const username = formData.get("username") as string;
+    const password = formData.get("password") as string;
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
     const body = {
       name: formData.get("name"),
-      username: formData.get("username"),
+      username,
       email: formData.get("email"),
-      password: formData.get("password"),
+      password,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }
     const response = await fetch('/api/users/signup', {
@@ -46,8 +58,9 @@ export default function SignupPage() {
           <input
             name="username"
             type="text"
-            placeholder="Username"
+            placeholder="Username (letters, numbers, underscores)"
             required
+            maxLength={30}
             className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <input
@@ -60,8 +73,9 @@ export default function SignupPage() {
           <input
             name="password"
             type="password"
-            placeholder="Password"
+            placeholder="Password (min 8 characters)"
             required
+            minLength={8}
             className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button

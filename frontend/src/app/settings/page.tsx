@@ -99,6 +99,10 @@ export default function SettingsPage() {
       setPasswordError("Both fields are required");
       return;
     }
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters");
+      return;
+    }
     setPasswordLoading(true);
     const res = await fetch("/api/users/password", {
       method: "PATCH",
