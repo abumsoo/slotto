@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Bell, User, Menu, Settings, LogOut, Plus } from 'lucide-react';
+import { Home, Bell, User, Menu, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Toast } from '@/components/Toast';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export function BottomNav() {
   const { user, loading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -56,13 +58,16 @@ export function BottomNav() {
         </Link>
         <button
           onClick={() => {
+            if (user.hasPostedToday) { setToast("You've already posted today"); return; }
             setMenuOpen(false);
             router.push('/compose');
           }}
           className="flex-1 flex items-center justify-center py-3 text-muted-foreground"
         >
-          <div className="bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center">
-            <Plus size={18} />
+          <div className={`rounded-full w-8 h-8 flex items-center justify-center ${user.hasPostedToday ? 'bg-muted-foreground/25' : 'bg-primary'}`}>
+            <span className={`text-sm font-bold ${user.hasPostedToday ? 'text-muted-foreground' : 'text-primary-foreground'}`}>
+              {user.hasPostedToday ? '0' : '1'}
+            </span>
           </div>
         </button>
         <Link
@@ -111,6 +116,7 @@ export function BottomNav() {
           </div>
         </div>
       </div>
+      {toast && <Toast message={toast!} onClose={() => setToast(null)} />}
     </>
   );
 }

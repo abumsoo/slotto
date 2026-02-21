@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Home, Bell, User, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Toast } from '@/components/Toast';
 
 export function SideNav() {
   const pathname = usePathname();
   const { user, loading, refreshUser } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     refreshUser();
@@ -60,6 +62,7 @@ export function SideNav() {
   ];
 
   return (
+    <>
     <nav className="hidden sm:flex flex-col gap-1 fixed left-0 top-0 h-full w-48 border-r border-border bg-card z-40 pt-6 px-3">
       {logo}
       {links.map(({ href, label, icon, badge }) => (
@@ -77,6 +80,25 @@ export function SideNav() {
           )}
         </Link>
       ))}
+      {user.hasPostedToday ? (
+        <button
+          onClick={() => setToast("You've already posted today")}
+          className="flex items-center gap-3 px-3 py-2 mt-2 rounded-lg bg-muted-foreground/15 text-muted-foreground w-full"
+        >
+          <span className="text-sm font-bold w-5 text-center">0</span>
+          <span className="text-base font-medium">New Post</span>
+        </button>
+      ) : (
+        <Link
+          href="/compose"
+          className="flex items-center gap-3 px-3 py-2 mt-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          <span className="text-sm font-bold w-5 text-center">1</span>
+          <span className="text-base font-medium">New Post</span>
+        </Link>
+      )}
     </nav>
+    {toast && <Toast message={toast!} onClose={() => setToast(null)} />}
+  </>
   );
 }

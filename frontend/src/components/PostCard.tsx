@@ -79,8 +79,17 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
         </div>
       )}
       <div className="mt-3 flex justify-between items-center">
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground flex items-center gap-2">
           {timeAgo(post.created_at)}
+          {post.is_feed && (() => {
+            const msLeft = new Date(post.created_at).getTime() + 3 * 24 * 60 * 60 * 1000 - Date.now();
+            const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+            return (
+              <span className="text-xs text-muted-foreground/60">
+                {daysLeft <= 0 ? 'expires today' : daysLeft === 1 ? '1 day left' : `${daysLeft} days left`}
+              </span>
+            );
+          })()}
         </span>
         <div className="flex gap-2">
           {onReply && (

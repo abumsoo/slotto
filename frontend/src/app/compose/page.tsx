@@ -7,6 +7,7 @@ import { PostForm } from '@/components/PostForm';
 import { LoginPrompt } from '@/components/LoginPrompt';
 import { VerifyEmailPrompt } from '@/components/VerifyEmailPrompt';
 import { Post } from '@/components/PostCard';
+import { ArrowLeft } from 'lucide-react';
 
 function ComposeContent() {
   const searchParams = useSearchParams();
@@ -48,6 +49,13 @@ function ComposeContent() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20">
+      <button
+        onClick={() => router.back()}
+        className="sm:hidden flex items-center gap-1 text-muted-foreground hover:text-foreground mb-4"
+      >
+        <ArrowLeft size={18} />
+        <span className="text-sm">Back</span>
+      </button>
       <PostForm
         onPost={() => router.push('/home')}
         onLoginRequired={() => setShowLoginPrompt(true)}
@@ -57,6 +65,7 @@ function ComposeContent() {
         referencedPost={replyingTo}
         onClearReference={() => setReplyingTo(null)}
       />
+      <p className="text-xs text-muted-foreground text-center mt-1">Your post will be visible for 3 days.</p>
       {showLoginPrompt && <LoginPrompt onClose={() => setShowLoginPrompt(false)} />}
       {showVerifyEmail && <VerifyEmailPrompt onClose={() => setShowVerifyEmail(false)} />}
     </div>
