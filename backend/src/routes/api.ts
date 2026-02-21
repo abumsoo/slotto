@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import express, { Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import db from '../config/database';
 import jwt from 'jsonwebtoken';
 import { authenticate } from '../middleware/auth';
@@ -8,6 +9,38 @@ import multer from 'multer';
 import nodemailer from 'nodemailer';
 
 const router = express.Router();
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  message: { message: 'Too many login attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  message: { message: 'Too many accounts created from this IP, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 5,
+  message: { message: 'Too many password reset requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const tokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  message: { message: 'Too many attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Test endpoint
 router.get('/test', (req: Request, res: Response) => {
@@ -41,7 +74,7 @@ async function sendTestEmail(verificationToken: string, recipientEmail: string) 
   );
 }
 
-router.post('/users/signup', async (req: Request, res: Response) => {
+router.post('/users/signup', signupLimiter, async (req: Request, res: Response) => {
   const { name, username, email, password, timezone } = req.body;
   const password_hash = await bcrypt.hash(password, 10);
   const user = await db.one('INSERT INTO users (username, name, email, password_hash, timezone) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email', [username, name, email, password_hash, timezone]);
@@ -53,7 +86,7 @@ router.post('/users/signup', async (req: Request, res: Response) => {
   res.status(201).json({message: 'Check your email to verify your account'});
 })
 
-router.post('/users/verify', async (req: Request, res: Response) => {
+router.post('/users/verify', tokenLimiter, async (req: Request, res: Response) => {
   const { token } = req.query;
   const user = await db.oneOrNone('SELECT id FROM users WHERE verification_token = $1 AND verification_token_expires > NOW()', [token]);
   if (!user) {
@@ -82,7 +115,7 @@ router.post('/users/resend-verification', authenticate, async (req: Request, res
   res.json({ message: 'Verification email sent' });
 })
 
-router.post('/users/login', async (req: Request, res: Response) => {
+router.post('/users/login', loginLimiter, async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const user = await db.oneOrNone('SELECT id, password_hash FROM users WHERE email = $1', [email]);
   if (!user) {
@@ -333,7 +366,7 @@ router.get('/posts', async (req: Request, res: Response) => {
   res.json({ posts: paginatedRows, ancestors: ancestorRows, nextCursor });
 })
 
-router.post('/users/reset-password-request', async (req: Request, res: Response) => {
+router.post('/users/reset-password-request', passwordResetLimiter, async (req: Request, res: Response) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ message: 'Email is required' });
@@ -357,7 +390,7 @@ router.post('/users/reset-password-request', async (req: Request, res: Response)
   res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
 });
 
-router.post('/users/reset-password', async (req: Request, res: Response) => {
+router.post('/users/reset-password', tokenLimiter, async (req: Request, res: Response) => {
   const { token, newPassword } = req.body;
   if (!token || !newPassword) {
     return res.status(400).json({ message: 'Token and new password are required' });
