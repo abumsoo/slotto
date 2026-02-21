@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
 import apiRoutes from './routes/api';
 
 dotenv.config();
@@ -10,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+app.use(helmet());
 app.use(cookieParser());
 app.use(cors({
   origin: process.env.CORS_ORIGIN
