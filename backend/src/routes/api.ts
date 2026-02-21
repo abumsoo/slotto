@@ -42,10 +42,6 @@ const tokenLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Test endpoint
-router.get('/test', (req: Request, res: Response) => {
-  res.json({ message: 'API is working!' });
-});
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -303,7 +299,7 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
 router.get('/posts/:id', async (req: Request, res: Response) => {
   const post = await db.oneOrNone(`
     SELECT p.*, u.username,
-      true AS is_feed,
+      (p.created_at > NOW() - INTERVAL '3 days') AS is_feed,
       rp.content AS parent_content, rpu.username AS parent_username, rp.id AS parent_id
     FROM posts p
     JOIN users u ON p.user_id = u.id
@@ -425,25 +421,6 @@ router.get('/users/me/posts', authenticate, async (req: Request, res: Response) 
   res.json(posts);
 });
 
-// Single post by ID
-router.get('/posts/:id', async (req: Request, res: Response) => {
-  const postId = parseInt(req.params.id as string);
-  const post = await db.oneOrNone(`
-    SELECT p.*, u.username,
-      (p.created_at > NOW() - INTERVAL '3 days') AS is_feed,
-      rp.content AS parent_content,
-      rpu.username AS parent_username,
-      rp.id AS parent_id
-    FROM posts p
-    JOIN users u ON p.user_id = u.id
-    LEFT JOIN posts rp ON p.referenced_post_id = rp.id
-    LEFT JOIN users rpu ON rp.user_id = rpu.id
-    WHERE p.id = $1`,
-    [postId]
-  );
-  if (!post) return res.status(404).json({ message: 'Post not found' });
-  res.json(post);
-});
 
 // Thread view: ancestors + descendants of a post
 router.get('/posts/:id/thread', async (req: Request, res: Response) => {
