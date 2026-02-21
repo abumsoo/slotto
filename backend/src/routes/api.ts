@@ -6,7 +6,7 @@ import db from '../config/database';
 import jwt from 'jsonwebtoken';
 import { authenticate } from '../middleware/auth';
 import multer from 'multer';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 const router = express.Router();
 
@@ -47,23 +47,17 @@ router.get('/test', (req: Request, res: Response) => {
   res.json({ message: 'API is working!' });
 });
 
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 async function sendEmail(subject: string, link: string, recipientEmail: string) {
-  const testAccount = await nodemailer.createTestAccount();
-  const transporter = nodemailer.createTransport({
-    host: testAccount.smtp.host,
-    port: testAccount.smtp.port,
-    secure: testAccount.smtp.secure,
-    auth: { user: testAccount.user, pass: testAccount.pass },
-  });
-  const info = await transporter.sendMail({
-    from: '"Slothy" <no-reply@slothy.app>',
+  const { error } = await resend.emails.send({
+    from: 'Slothy <no-reply@slothy.app>',
     to: recipientEmail,
     subject,
     text: link,
     html: `<b><a href="${link}">${link}</a></b>`,
   });
-  console.log("Message sent:", info.messageId);
-  console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+  if (error) console.error('Resend error:', error);
 }
 
 async function sendTestEmail(verificationToken: string, recipientEmail: string) {
