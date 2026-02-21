@@ -272,26 +272,65 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
 })
 
 
+// single post
+router.get('/posts/:id', async (req: Request, res: Response) => {
+  const post = await db.oneOrNone(`
+    SELECT p.*, u.username,
+      true AS is_feed,
+      rp.content AS parent_content, rpu.username AS parent_username, rp.id AS parent_id
+    FROM posts p
+    JOIN users u ON p.user_id = u.id
+    LEFT JOIN posts rp ON p.referenced_post_id = rp.id
+    LEFT JOIN users rpu ON rp.user_id = rpu.id
+    WHERE p.id = $1
+  `, [req.params.id]);
+  if (!post) return res.status(404).json({ message: 'Post not found' });
+  res.json(post);
+});
+
 // feed
 router.get('/posts', async (req: Request, res: Response) => {
-  const posts = await db.any(`
-  WITH RECURSIVE feed AS (
-    SELECT p.* FROM posts p WHERE p.created_at > NOW() - INTERVAL '3 days'
-    UNION
-    SELECT ref.* FROM posts ref
-    JOIN feed f ON f.referenced_post_id = ref.id
+  const cursor = (req.query.cursor as string) || null;
+  const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
+  const rows = await db.any(`
+  WITH paginated_feed AS (
+    SELECT p.*
+    FROM posts p
+    WHERE p.created_at > NOW() - INTERVAL '3 days'
+      AND ($1::timestamptz IS NULL OR p.created_at < $1::timestamptz)
+    ORDER BY p.created_at DESC
+    LIMIT $2
+  ),
+  ancestors AS (
+    SELECT ref.*
+    FROM posts ref
+    JOIN paginated_feed f ON f.referenced_post_id = ref.id
+    WHERE ref.id NOT IN (SELECT id FROM paginated_feed)
+  ),
+  combined AS (
+    SELECT *, true AS from_feed FROM paginated_feed
+    UNION ALL
+    SELECT *, false AS from_feed FROM ancestors
   )
-  SELECT f.*, u.username,
-    (f.created_at > NOW() - INTERVAL '3 days') AS is_feed,
-    rp.content AS parent_content,
-    rpu.username AS parent_username,
-    rp.id AS parent_id
-  FROM feed f
-  JOIN users u ON f.user_id = u.id
-  LEFT JOIN posts rp ON f.referenced_post_id = rp.id
+  SELECT c.*, u.username,
+    (c.created_at > NOW() - INTERVAL '3 days') AS is_feed,
+    c.from_feed,
+    rp.content AS parent_content, rpu.username AS parent_username, rp.id AS parent_id
+  FROM combined c
+  JOIN users u ON c.user_id = u.id
+  LEFT JOIN posts rp ON c.referenced_post_id = rp.id
   LEFT JOIN users rpu ON rp.user_id = rpu.id
-  ORDER BY f.created_at DESC`);
-  res.json(posts);
+  ORDER BY c.created_at DESC
+  `, [cursor, limit]);
+
+  const paginatedRows = rows.filter((r: any) => r.from_feed);
+  const ancestorRows = rows.filter((r: any) => !r.from_feed);
+  const nextCursor = paginatedRows.length === limit
+    ? (paginatedRows[paginatedRows.length - 1].created_at as Date).toISOString()
+    : null;
+
+  res.json({ posts: paginatedRows, ancestors: ancestorRows, nextCursor });
 })
 
 router.post('/users/reset-password-request', async (req: Request, res: Response) => {

@@ -1,42 +1,131 @@
 'use client';
 
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PostCard, Post } from "@/components/PostCard";
 import { Toast } from "@/components/Toast";
 import { ReferenceModal } from "@/components/ReferenceModal";
 import { useRouter } from "next/navigation";
 
+const FEED_CACHE_KEY = 'feedCache';
+const FEED_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+interface FeedCache {
+  posts: Post[];
+  ancestors: Post[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  scrollY: number;
+  timestamp: number;
+}
+
+function saveFeedCache(data: Omit<FeedCache, 'timestamp' | 'scrollY'>) {
+  sessionStorage.setItem(FEED_CACHE_KEY, JSON.stringify({
+    ...data,
+    scrollY: window.scrollY,
+    timestamp: Date.now(),
+  }));
+}
+
+// Reads and immediately removes the cache — call once during useState init
+function popFeedCache(): FeedCache | null {
+  try {
+    const raw = sessionStorage.getItem(FEED_CACHE_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(FEED_CACHE_KEY);
+    const data: FeedCache = JSON.parse(raw);
+    if (Date.now() - data.timestamp > FEED_CACHE_TTL) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
 
 export default function HomePage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  // Read cache once at initialisation — avoids a loading flash on back-navigation
+  const [cache] = useState<FeedCache | null>(popFeedCache);
+  const [posts, setPosts] = useState<Post[]>(cache?.posts ?? []);
+  const [ancestors, setAncestors] = useState<Post[]>(cache?.ancestors ?? []);
   const [toast, setToast] = useState<string | null>(null);
   const [hasPostedToday, setHasPostedToday] = useState(false);
   const [viewingReference, setViewingReference] = useState<Post | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(cache?.nextCursor ?? null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [hasMore, setHasMore] = useState<boolean>(cache?.hasMore ?? true);
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!cache);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const { user, loading } = useAuth();
   const router = useRouter();
 
   const postsMap = useMemo(() => {
     const map = new Map<number, Post>();
-    for (const post of posts) {
+    for (const post of [...posts, ...ancestors]) {
       map.set(post.id, post);
     }
     return map;
-  }, [posts]);
+  }, [posts, ancestors]);
 
-  function fetchPosts() {
-    fetch('/api/posts', {
-      credentials: 'include',
-    })
-      .then((res) => res.json())
-      .then((data) => setPosts(data));
+  function loadInitialFeed() {
+    setIsInitialLoading(true);
+    setPosts([]);
+    setAncestors([]);
+    setNextCursor(null);
+    setHasMore(true);
+    fetch('/api/posts', { credentials: 'include' })
+      .then(res => res.json())
+      .then(({ posts: newPosts, ancestors: newAncestors, nextCursor: cursor }) => {
+        setPosts(newPosts);
+        setAncestors(newAncestors);
+        setNextCursor(cursor);
+        setHasMore(cursor !== null);
+      })
+      .finally(() => setIsInitialLoading(false));
+  }
+
+  function loadMorePosts() {
+    if (isFetchingMore || !hasMore || !nextCursor) return;
+    setIsFetchingMore(true);
+    fetch(`/api/posts?cursor=${encodeURIComponent(nextCursor)}`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(({ posts: newPosts, ancestors: newAncestors, nextCursor: cursor }) => {
+        setPosts(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          return [...prev, ...newPosts.filter((p: Post) => !existingIds.has(p.id))];
+        });
+        setAncestors(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          return [...prev, ...newAncestors.filter((p: Post) => !existingIds.has(p.id))];
+        });
+        setNextCursor(cursor);
+        setHasMore(cursor !== null);
+      })
+      .finally(() => setIsFetchingMore(false));
   }
 
   useEffect(() => {
-    if (user?.hasPostedToday) setHasPostedToday(true);
-    fetchPosts();
+    if (!user) return;
+    if (user.hasPostedToday) setHasPostedToday(true);
+    if (!cache) loadInitialFeed();
   }, [user]);
+
+  // Restore scroll after back-navigation — wait for auth to resolve so posts are in the DOM,
+  // then setTimeout lets Next.js finish its own scroll reset before we override it
+  useEffect(() => {
+    if (!cache?.scrollY || loading) return;
+    const timer = setTimeout(() => window.scrollTo(0, cache.scrollY), 0);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      entries => { if (entries[0].isIntersecting) loadMorePosts(); },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [isInitialLoading, isFetchingMore, hasMore, nextCursor]);
 
   if (loading) return null;
 
@@ -52,11 +141,9 @@ export default function HomePage() {
   }
 
   function handleGoToPost(postId: number) {
+    saveFeedCache({ posts, ancestors, nextCursor, hasMore });
     setViewingReference(null);
-    const el = document.getElementById(`post-${postId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    router.push('/post/' + postId);
   }
 
   return (
@@ -65,19 +152,31 @@ export default function HomePage() {
         <span className="text-primary font-bold text-2xl">eslo</span>
         <div className="w-5 h-5 rounded-full bg-primary" />
       </div>
-      <div className="-mx-4 sm:mx-0">
-        <div className="border-b border-muted-foreground/30 divide-y divide-muted-foreground/30">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onReply={handleReply}
-              onViewReference={handleViewReference}
-              actionsDisabled={hasPostedToday}
-            />
-          ))}
+      {isInitialLoading ? (
+        <div className="py-12 text-center text-sm text-muted-foreground">Loading feed…</div>
+      ) : (
+        <div className="-mx-4 sm:mx-0">
+          <div className="border-b border-muted-foreground/30 divide-y divide-muted-foreground/30">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onReply={handleReply}
+                onViewReference={handleViewReference}
+                actionsDisabled={hasPostedToday}
+              />
+            ))}
+          </div>
+          <div ref={sentinelRef} className="py-6 flex justify-center">
+            {isFetchingMore && (
+              <span className="text-sm text-muted-foreground">Loading...</span>
+            )}
+            {!hasMore && posts.length > 0 && (
+              <span className="text-sm text-muted-foreground">You&apos;re all caught up</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {viewingReference && (
         <ReferenceModal
