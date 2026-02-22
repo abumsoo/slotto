@@ -47,7 +47,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendEmail(subject: string, link: string, recipientEmail: string) {
   const { error } = await resend.emails.send({
-    from: 'Slothy <no-reply@slothy.app>',
+    from: 'ehslo <no-reply@ehslo.app>',
     to: recipientEmail,
     subject,
     text: link,
@@ -58,7 +58,7 @@ async function sendEmail(subject: string, link: string, recipientEmail: string) 
 
 async function sendTestEmail(verificationToken: string, recipientEmail: string) {
   await sendEmail(
-    'Verify your Slothy account',
+    'Verify your ehslo account',
     `http://localhost:3000/verify?token=${verificationToken}`,
     recipientEmail,
   );
@@ -373,7 +373,7 @@ router.post('/users/reset-password-request', passwordResetLimiter, async (req: R
     [resetToken, expires, user.id]
   );
   sendEmail(
-    'Reset your Slothy password',
+    'Reset your ehslo password',
     `http://localhost:3000/reset-password?token=${resetToken}`,
     user.email,
   ).catch(console.error);

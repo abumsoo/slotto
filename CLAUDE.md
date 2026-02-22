@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Slothy is a "slow social media" full-stack web app with daily posting features. It's in early development — auth controller is stubbed, most API routes are TODOs, and the model layer doesn't exist yet despite Sequelize being installed.
+ehslo is a "slow social media" full-stack web app with daily posting features. It's in early development — auth controller is stubbed, most API routes are TODOs, and the model layer doesn't exist yet despite Sequelize being installed.
 
 ## Tech Stack
 
