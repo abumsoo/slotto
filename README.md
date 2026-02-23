@@ -1,11 +1,11 @@
-# ehslo
+# eslo
 
 A full-stack web application built with React/TypeScript, Next.js, Node.js, and PostgreSQL.
 
 ## Project Structure
 
 ```
-ehslo/
+eslo/
 ├── frontend/          # Next.js frontend application (React + TypeScript)
 ├── backend/           # Node.js backend API (Express + TypeScript)
 └── README.md          # This file
@@ -40,7 +40,7 @@ ehslo/
 
 ```bash
 git clone <repository-url>
-cd ehslo
+cd eslo
 ```
 
 ### 2. Setup Backend
@@ -55,7 +55,7 @@ npm install
 cp .env.example .env
 
 # Edit .env and update with your PostgreSQL credentials
-# DATABASE_URL=postgresql://username:password@localhost:5432/ehslo
+# DATABASE_URL=postgresql://username:password@localhost:5432/eslo
 ```
 
 ### 3. Setup PostgreSQL Database
@@ -65,7 +65,7 @@ cp .env.example .env
 psql -U postgres
 
 # Create database
-CREATE DATABASE ehslo;
+CREATE DATABASE eslo;
 
 # Exit psql
 \q
@@ -137,7 +137,7 @@ Open your browser and navigate to:
 ### Backend (.env)
 ```
 PORT=3001
-DATABASE_URL=postgresql://username:password@localhost:5432/ehslo
+DATABASE_URL=postgresql://username:password@localhost:5432/eslo
 NODE_ENV=development
 ```
 

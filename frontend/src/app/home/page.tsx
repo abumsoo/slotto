@@ -149,7 +149,7 @@ export default function HomePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20">
       <div className="-mx-4 sm:mx-0 flex justify-center items-center gap-2 pb-4 border-b border-muted-foreground/30">
-        <span className="text-primary font-bold text-2xl">ehslo</span>
+        <span className="text-primary font-bold text-2xl">eslo</span>
         <div className="w-5 h-5 rounded-full bg-primary" />
       </div>
       {isInitialLoading ? (

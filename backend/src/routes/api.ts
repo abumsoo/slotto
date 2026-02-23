@@ -53,7 +53,7 @@ const supabase = createClient(
 
 async function sendEmail(subject: string, link: string, recipientEmail: string) {
   const { error } = await resend.emails.send({
-    from: 'ehslo <no-reply@ehslo.app>',
+    from: 'eslo <no-reply@eslo.app>',
     to: recipientEmail,
     subject,
     text: link,
@@ -64,7 +64,7 @@ async function sendEmail(subject: string, link: string, recipientEmail: string) 
 
 async function sendTestEmail(verificationToken: string, recipientEmail: string) {
   await sendEmail(
-    'Verify your ehslo account',
+    'Verify your eslo account',
     `http://localhost:3000/verify?token=${verificationToken}`,
     recipientEmail,
   );
@@ -130,7 +130,7 @@ router.post('/users/login', loginLimiter, async (req: Request, res: Response) =>
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    ...(process.env.NODE_ENV === 'production' && { domain: '.ehslo.com' }),
+    ...(process.env.NODE_ENV === 'production' && { domain: '.eslo.app' }),
     maxAge: 7*24*60*60*1000
   });
   res.json({ message: 'Login successful' });
@@ -384,7 +384,7 @@ router.post('/users/reset-password-request', passwordResetLimiter, async (req: R
     [resetToken, expires, user.id]
   );
   sendEmail(
-    'Reset your ehslo password',
+    'Reset your eslo password',
     `http://localhost:3000/reset-password?token=${resetToken}`,
     user.email,
   ).catch(console.error);

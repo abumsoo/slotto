@@ -4,7 +4,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SideNav } from "@/components/SideNav";
 
 export const metadata: Metadata = {
-  title: "ehslo",
+  title: "eslo",
   description: "slow social media",
 };
 
