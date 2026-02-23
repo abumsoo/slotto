@@ -3,7 +3,6 @@ import { X } from "lucide-react";
 import { timeAgo } from "@/helpers";
 import { MarkdownContent } from "@/components/MarkdownContent";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface Post {
   id: number;
@@ -57,13 +56,13 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
       <div className="text-card-foreground"><MarkdownContent content={post.content} onPostLink={onViewReference} /></div>
       {post.image_url && (
         <div
-          className="mt-2 bg-black rounded-lg max-h-96 flex items-center justify-center cursor-pointer"
+          className="mt-2 max-h-96 flex items-center justify-start cursor-pointer"
           onClick={() => setShowImage(true)}
         >
           <img
-            src={`${API_URL}${post.image_url}`}
+            src={post.image_url}
             alt=""
-            className="max-h-96 object-contain"
+            className="max-h-96 object-contain rounded-lg"
           />
         </div>
       )}
@@ -76,7 +75,7 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
             <X size={20} />
           </button>
           <img
-            src={`${API_URL}${post.image_url}`}
+            src={post.image_url}
             alt=""
             className="w-screen h-screen object-contain"
           />

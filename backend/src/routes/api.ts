@@ -8,6 +8,7 @@ import { authenticate } from '../middleware/auth';
 import multer from 'multer';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
+import sharp from 'sharp';
 
 const router = express.Router();
 
@@ -246,7 +247,7 @@ router.delete('/users/me', authenticate, async (req: Request, res: Response) => 
 // post posts
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -265,10 +266,14 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
   }
   let imageUrl: string | null = null;
   if (req.file) {
-    const filename = `${Date.now()}-${req.file.originalname}`;
+    const resized = await sharp(req.file.buffer)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    const filename = `${Date.now()}-${req.file.originalname.replace(/\.[^.]+$/, '')}.jpg`;
     const { error } = await supabase.storage
       .from('post-images')
-      .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
+      .upload(filename, resized, { contentType: 'image/jpeg' });
     if (error) return res.status(500).json({ message: 'Image upload failed' });
     const { data } = supabase.storage.from('post-images').getPublicUrl(filename);
     imageUrl = data.publicUrl;
