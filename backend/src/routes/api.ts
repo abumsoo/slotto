@@ -122,8 +122,9 @@ router.post('/users/login', loginLimiter, async (req: Request, res: Response) =>
   );
   res.cookie('token', token, {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
+    ...(process.env.NODE_ENV === 'production' && { domain: '.ehslo.com' }),
     maxAge: 7*24*60*60*1000
   });
   res.json({ message: 'Login successful' });
