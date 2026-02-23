@@ -104,10 +104,10 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    if (!user) return;
-    if (user.hasPostedToday) setHasPostedToday(true);
+    if (loading) return;
+    if (user?.hasPostedToday) setHasPostedToday(true);
     if (!cache) loadInitialFeed();
-  }, [user]);
+  }, [loading]);
 
   // Restore scroll after back-navigation — wait for auth to resolve so posts are in the DOM,
   // then setTimeout lets Next.js finish its own scroll reset before we override it
@@ -149,7 +149,7 @@ export default function HomePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20">
       <div className="-mx-4 sm:mx-0 flex justify-center items-center gap-2 pb-4 border-b border-muted-foreground/30">
-        <span className="text-primary font-bold text-2xl">eslo</span>
+        <span className="text-primary font-bold text-2xl">ehslo</span>
         <div className="w-5 h-5 rounded-full bg-primary" />
       </div>
       {isInitialLoading ? (
@@ -171,7 +171,10 @@ export default function HomePage() {
             {isFetchingMore && (
               <span className="text-sm text-muted-foreground">Loading...</span>
             )}
-            {!hasMore && posts.length > 0 && (
+            {!isFetchingMore && !hasMore && posts.length === 0 && (
+              <span className="text-sm text-muted-foreground">Nothing here yet</span>
+            )}
+            {!isFetchingMore && !hasMore && posts.length > 0 && (
               <span className="text-sm text-muted-foreground">You&apos;re all caught up</span>
             )}
           </div>

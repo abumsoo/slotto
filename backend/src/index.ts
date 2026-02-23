@@ -23,7 +23,6 @@ app.use(express.json());
 
 // Routes
 app.use('/api', apiRoutes);
-app.use('/uploads', express.static('uploads'));
 
 // Health check route
 app.get('/health', (req: Request, res: Response) => {

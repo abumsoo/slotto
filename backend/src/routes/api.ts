@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { authenticate } from '../middleware/auth';
 import multer from 'multer';
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
 
@@ -44,6 +45,11 @@ const tokenLimiter = rateLimit({
 
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 async function sendEmail(subject: string, link: string, recipientEmail: string) {
   const { error } = await resend.emails.send({
@@ -232,14 +238,9 @@ router.delete('/users/me', authenticate, async (req: Request, res: Response) => 
 
 // post posts
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: 'uploads',
-    filename: (req, file, cb) => {
-      cb(null, `${Date.now()}-${file.originalname}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -255,7 +256,16 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
   if (!req.user.email_verified) {
     return res.status(403).json({ message: 'Please verify your email first' });
   }
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  let imageUrl: string | null = null;
+  if (req.file) {
+    const filename = `${Date.now()}-${req.file.originalname}`;
+    const { error } = await supabase.storage
+      .from('post-images')
+      .upload(filename, req.file.buffer, { contentType: req.file.mimetype });
+    if (error) return res.status(500).json({ message: 'Image upload failed' });
+    const { data } = supabase.storage.from('post-images').getPublicUrl(filename);
+    imageUrl = data.publicUrl;
+  }
   const body = req.body;
   if (!body.content || body.content.length > 1000) {
     return res.status(400).json({ message: 'Post must be 1-1000 characters'});
