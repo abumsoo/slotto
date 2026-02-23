@@ -62,10 +62,10 @@ async function sendEmail(subject: string, link: string, recipientEmail: string) 
   if (error) console.error('Resend error:', error);
 }
 
-async function sendTestEmail(verificationToken: string, recipientEmail: string) {
+async function sendVerificationEmail(verificationToken: string, recipientEmail: string) {
   await sendEmail(
     'Verify your eslo account',
-    `http://localhost:3000/verify?token=${verificationToken}`,
+    `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${verificationToken}`,
     recipientEmail,
   );
 }
@@ -78,7 +78,7 @@ router.post('/users/signup', signupLimiter, async (req: Request, res: Response) 
   const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
   await db.none('UPDATE users SET verification_token = $1, verification_token_expires = $2 WHERE id = $3', [verificationToken, expires, user.id]);
   // send email
-  sendTestEmail(verificationToken, email).catch(console.error);
+  sendVerificationEmail(verificationToken, email).catch(console.error);
   res.status(201).json({message: 'Check your email to verify your account'});
 })
 
@@ -107,7 +107,7 @@ router.post('/users/resend-verification', authenticate, async (req: Request, res
   const verificationToken = crypto.randomBytes(32).toString('hex');
   const expires = new Date(Date.now() + 60 * 60 * 1000);
   await db.none('UPDATE users SET verification_token = $1, verification_token_expires = $2 WHERE id = $3', [verificationToken, expires, req.user!.id]);
-  sendTestEmail(verificationToken, req.user!.email).catch(console.error);
+  sendVerificationEmail(verificationToken, req.user!.email).catch(console.error);
   res.json({ message: 'Verification email sent' });
 })
 
@@ -198,7 +198,7 @@ router.patch('/users/email', authenticate, async (req: Request, res: Response) =
     'UPDATE users SET email = $1, email_verified = FALSE, verification_token = $2, verification_token_expires = $3 WHERE id = $4',
     [email, verificationToken, expires, req.user!.id]
   );
-  sendTestEmail(verificationToken, email).catch(console.error);
+  sendVerificationEmail(verificationToken, email).catch(console.error);
   res.json({ message: 'Email updated. Check your inbox to verify.' });
 })
 
@@ -385,7 +385,7 @@ router.post('/users/reset-password-request', passwordResetLimiter, async (req: R
   );
   sendEmail(
     'Reset your eslo password',
-    `http://localhost:3000/reset-password?token=${resetToken}`,
+    `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`,
     user.email,
   ).catch(console.error);
   res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
