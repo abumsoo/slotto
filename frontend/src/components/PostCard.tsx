@@ -38,8 +38,12 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
     return () => window.removeEventListener('popstate', handlePopState);
   }, [showImage]);
 
+  const decayPercent = post.is_feed
+    ? Math.max(0, (new Date(post.created_at).getTime() + 3 * 24 * 60 * 60 * 1000 - Date.now()) / (3 * 24 * 60 * 60 * 1000)) * 100
+    : null;
+
   return (
-    <div id={`post-${post.id}`} className={`bg-card p-4 hover:bg-muted ${highlighted ? 'ring-2 ring-primary ring-inset' : ''}`}>
+    <div id={`post-${post.id}`} className={`relative bg-card p-4 hover:bg-muted ${highlighted ? 'ring-2 ring-primary ring-inset' : ''}`}>
       <p className="text-sm text-muted-foreground mb-3">@{post.username}</p>
       {post.parent_content && post.parent_id && (
         <div
@@ -78,18 +82,14 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
           />
         </div>
       )}
+      {decayPercent !== null && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted-foreground/10">
+          <div className="h-full bg-muted-foreground/25 transition-all" style={{ width: `${decayPercent}%` }} />
+        </div>
+      )}
       <div className="mt-3 flex justify-between items-center">
         <span className="text-sm text-muted-foreground flex items-center gap-2">
           {timeAgo(post.created_at)}
-          {post.is_feed && (() => {
-            const msLeft = new Date(post.created_at).getTime() + 3 * 24 * 60 * 60 * 1000 - Date.now();
-            const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
-            return (
-              <span className="text-xs text-muted-foreground/60">
-                {daysLeft <= 0 ? 'expires today' : daysLeft === 1 ? '1 day left' : `${daysLeft} days left`}
-              </span>
-            );
-          })()}
         </span>
         <div className="flex gap-2">
           {onReply && (

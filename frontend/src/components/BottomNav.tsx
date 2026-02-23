@@ -32,7 +32,18 @@ export function BottomNav() {
       .then(() => router.push('/login'));
   }
 
-  if (loading || !user) return null;
+  if (loading) return null;
+
+  if (!user) return (
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-center gap-3 px-6 py-3 z-50">
+      <Link href="/signup" className="flex-1 flex items-center justify-center py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium">
+        Sign up
+      </Link>
+      <Link href="/login" className="flex-1 flex items-center justify-center py-2 rounded-full border border-border text-foreground text-sm font-medium">
+        Log in
+      </Link>
+    </nav>
+  );
 
   return (
     <>
