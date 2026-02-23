@@ -51,21 +51,28 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-async function sendEmail(subject: string, link: string, recipientEmail: string) {
+async function sendEmail(subject: string, text: string, html: string, recipientEmail: string) {
   const { error } = await resend.emails.send({
     from: 'eslo <no-reply@eslo.app>',
     to: recipientEmail,
     subject,
-    text: link,
-    html: `<b><a href="${link}">${link}</a></b>`,
+    text,
+    html,
   });
   if (error) console.error('Resend error:', error);
 }
 
 async function sendVerificationEmail(verificationToken: string, recipientEmail: string) {
+  const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${verificationToken}`;
   await sendEmail(
     'Verify your eslo account',
-    `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${verificationToken}`,
+    `Welcome to eslo! Please verify your email address by visiting this link:\n\n${link}\n\nThis link expires in 1 hour.`,
+    `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+      <h2 style="margin-bottom:8px">Welcome to eslo</h2>
+      <p style="color:#555;margin-bottom:24px">Click the button below to verify your email address. This link expires in 1 hour.</p>
+      <a href="${link}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600">Verify email</a>
+      <p style="color:#999;font-size:12px;margin-top:24px">If you didn't create an eslo account, you can ignore this email.</p>
+    </div>`,
     recipientEmail,
   );
 }
@@ -383,9 +390,16 @@ router.post('/users/reset-password-request', passwordResetLimiter, async (req: R
     'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
     [resetToken, expires, user.id]
   );
+  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
   sendEmail(
     'Reset your eslo password',
-    `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`,
+    `You requested a password reset for your eslo account.\n\nClick this link to reset your password:\n\n${resetLink}\n\nThis link expires in 1 hour. If you didn't request this, you can ignore this email.`,
+    `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px">
+      <h2 style="margin-bottom:8px">Reset your password</h2>
+      <p style="color:#555;margin-bottom:24px">Click the button below to set a new password for your eslo account. This link expires in 1 hour.</p>
+      <a href="${resetLink}" style="display:inline-block;background:#000;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600">Reset password</a>
+      <p style="color:#999;font-size:12px;margin-top:24px">If you didn't request a password reset, you can ignore this email.</p>
+    </div>`,
     user.email,
   ).catch(console.error);
   res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
