@@ -1,6 +1,7 @@
 [build]
 builder = "nixpacks"
 buildCommand = "pnpm install && pnpm run build"
+watchPatterns = ["backend/**"]
 
 [deploy]
 startCommand = "pnpm start"
