@@ -11,10 +11,14 @@ import { API_BASE } from '@/lib/api';
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    refreshUser();
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
