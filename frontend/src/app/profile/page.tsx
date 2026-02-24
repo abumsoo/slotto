@@ -2,12 +2,12 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { PostCard, Post } from '@/components/PostCard';
 import { ThreadView } from '@/components/ThreadView';
 
 
-export default function ProfilePage() {
+function ProfileContent() {
   const { user, loading } = useAuth({ redirectTo: '/login' });
   const searchParams = useSearchParams();
   const highlightPostId = searchParams.get('post') ? parseInt(searchParams.get('post')!) : null;
@@ -68,5 +68,13 @@ export default function ProfilePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense>
+      <ProfileContent />
+    </Suspense>
   );
 }

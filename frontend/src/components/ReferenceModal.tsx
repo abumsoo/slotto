@@ -2,8 +2,6 @@ import { Post } from "@/components/PostCard";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { timeAgo } from "@/helpers";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-
 interface ReferenceModalProps {
   post: Post;
   onClose: () => void;
@@ -18,7 +16,7 @@ export function ReferenceModal({ post, onClose, onGoTo }: ReferenceModalProps) {
         <div className="text-card-foreground"><MarkdownContent content={post.content} /></div>
         {post.image_url && (
           <img
-            src={`${API_URL}${post.image_url}`}
+            src={post.image_url}
             alt=""
             className="max-h-48 rounded-lg object-contain"
           />

@@ -138,7 +138,6 @@ router.post('/users/login', loginLimiter, async (req: Request, res: Response) =>
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    ...(process.env.NODE_ENV === 'production' && { domain: '.eslo.app' }),
     maxAge: 7*24*60*60*1000
   });
   res.json({ message: 'Login successful' });
