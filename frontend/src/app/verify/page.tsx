@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { API_BASE } from '@/lib/api';
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -16,7 +17,7 @@ function VerifyContent() {
       return;
     }
 
-    fetch(`/api/users/verify?token=${token}`, {
+    fetch(`${API_BASE}/api/users/verify?token=${token}`, {
       method: 'POST',
     })
       .then(async (res) => {

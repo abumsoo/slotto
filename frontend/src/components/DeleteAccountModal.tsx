@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { API_BASE } from '@/lib/api';
 
 interface DeleteAccountModalProps {
   onClose: () => void;
@@ -18,7 +19,7 @@ export function DeleteAccountModal({ onClose }: DeleteAccountModalProps) {
     setError("");
     setLoading(true);
 
-    const response = await fetch("/api/users/me", {
+    const response = await fetch(`${API_BASE}/api/users/me`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

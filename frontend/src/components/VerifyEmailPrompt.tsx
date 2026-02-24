@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { API_BASE } from '@/lib/api';
 
 interface VerifyEmailPromptProps {
   onClose: () => void;
@@ -10,7 +11,7 @@ export function VerifyEmailPrompt({ onClose }: VerifyEmailPromptProps) {
   const router = useRouter();
 
   function handleVerify() {
-    fetch('/api/users/resend-verification', {
+    fetch(`${API_BASE}/api/users/resend-verification`, {
       method: "POST",
       credentials: "include",
     }).catch(console.error);

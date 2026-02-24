@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PostCard, Post } from "@/components/PostCard";
+import { API_BASE } from '@/lib/api';
 import { ArrowLeft } from "lucide-react";
 
 export default function PostPage() {
@@ -12,7 +13,7 @@ export default function PostPage() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/posts/${id}`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/posts/${id}`, { credentials: 'include' })
       .then(res => {
         if (!res.ok) { setNotFound(true); return null; }
         return res.json();

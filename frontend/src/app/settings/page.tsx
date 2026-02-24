@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { DeleteAccountModal } from "@/components/DeleteAccountModal";
+import { API_BASE } from "@/lib/api";
 
 
 export default function SettingsPage() {
@@ -11,7 +12,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   function handleLogout() {
-    fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
+    fetch(`${API_BASE}/api/users/logout`, { method: 'POST', credentials: 'include' })
       .then(() => router.push('/login'));
   }
 
@@ -47,7 +48,7 @@ export default function SettingsPage() {
     if (username.trim()) body.username = username.trim();
     if (name.trim()) body.name = name.trim();
 
-    const res = await fetch("/api/users/profile", {
+    const res = await fetch(`${API_BASE}/api/users/profile`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -74,7 +75,7 @@ export default function SettingsPage() {
       return;
     }
     setEmailLoading(true);
-    const res = await fetch("/api/users/email", {
+    const res = await fetch(`${API_BASE}/api/users/email`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -104,7 +105,7 @@ export default function SettingsPage() {
       return;
     }
     setPasswordLoading(true);
-    const res = await fetch("/api/users/password", {
+    const res = await fetch(`${API_BASE}/api/users/password`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

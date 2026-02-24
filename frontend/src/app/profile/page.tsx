@@ -3,6 +3,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, Suspense } from 'react';
+import { API_BASE } from '@/lib/api';
 import { PostCard, Post } from '@/components/PostCard';
 import { ThreadView } from '@/components/ThreadView';
 
@@ -18,7 +19,7 @@ function ProfileContent() {
 
   useEffect(() => {
     if (!user) return;
-    fetch('/api/users/me/posts', { credentials: 'include' })
+    fetch(`${API_BASE}/api/users/me/posts`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => setPosts(data));
   }, [user]);

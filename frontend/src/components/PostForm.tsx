@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { Post } from "@/components/PostCard";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { API_BASE } from '@/lib/api';
 
 const MAX_LENGTH = 1000;
 
@@ -57,7 +58,7 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
       formData.append('referenced_post_id', String(referencedPost.id));
     }
 
-    const response = await fetch('/api/post', {
+    const response = await fetch(`${API_BASE}/api/post`, {
       method: 'POST',
       credentials: 'include',
       body: formData,

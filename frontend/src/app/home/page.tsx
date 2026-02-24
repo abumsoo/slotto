@@ -6,6 +6,7 @@ import { PostCard, Post } from "@/components/PostCard";
 import { Toast } from "@/components/Toast";
 import { ReferenceModal } from "@/components/ReferenceModal";
 import { useRouter } from "next/navigation";
+import { API_BASE } from "@/lib/api";
 
 const FEED_CACHE_KEY = 'feedCache';
 const FEED_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -72,7 +73,7 @@ export default function HomePage() {
     setAncestors([]);
     setNextCursor(null);
     setHasMore(true);
-    fetch('/api/posts', { credentials: 'include' })
+    fetch(`${API_BASE}/api/posts`, { credentials: 'include' })
       .then(res => res.json())
       .then(({ posts: newPosts, ancestors: newAncestors, nextCursor: cursor }) => {
         setPosts(newPosts);
@@ -86,7 +87,7 @@ export default function HomePage() {
   function loadMorePosts() {
     if (isFetchingMore || !hasMore || !nextCursor) return;
     setIsFetchingMore(true);
-    fetch(`/api/posts?cursor=${encodeURIComponent(nextCursor)}`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/posts?cursor=${encodeURIComponent(nextCursor)}`, { credentials: 'include' })
       .then(res => res.json())
       .then(({ posts: newPosts, ancestors: newAncestors, nextCursor: cursor }) => {
         setPosts(prev => {

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { API_BASE } from '@/lib/api';
 import { PostForm } from '@/components/PostForm';
 import { LoginPrompt } from '@/components/LoginPrompt';
 import { VerifyEmailPrompt } from '@/components/VerifyEmailPrompt';
@@ -21,7 +22,7 @@ function ComposeContent() {
 
   useEffect(() => {
     if (!replyToId) return;
-    fetch(`/api/posts/${replyToId}`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/posts/${replyToId}`, { credentials: 'include' })
       .then(res => res.ok ? res.json() : null)
       .then(post => { if (post) setReplyingTo(post); });
   }, [replyToId]);

@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { timeAgo } from '@/helpers';
-
 import { useAuth } from '@/hooks/useAuth';
+import { API_BASE } from '@/lib/api';
 
 interface Notification {
   id: number;
@@ -23,7 +23,7 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    fetch('/api/notifications', { credentials: 'include' })
+    fetch(`${API_BASE}/api/notifications`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setNotifications(data);
@@ -34,7 +34,7 @@ export default function NotificationsPage() {
   }, []);
 
   function handleClick(notif: Notification) {
-    fetch('/api/notifications/read', {
+    fetch(`${API_BASE}/api/notifications/read`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -47,7 +47,7 @@ export default function NotificationsPage() {
   }
 
   function markAllRead() {
-    fetch('/api/notifications/read', {
+    fetch(`${API_BASE}/api/notifications/read`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

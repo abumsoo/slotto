@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_BASE } from '@/lib/api';
 
 interface ApiResponse {
   message: string;
@@ -16,7 +17,7 @@ export default function HealthPage() {
   const [dbData, setDbData] = useState<ApiResponse | null>(null);
 
   useEffect(() => {
-    fetch('/api/test')
+    fetch(`${API_BASE}/api/test`)
       .then((res) => res.json())
       .then((data) => {
         setApiStatus("Connected");
@@ -26,7 +27,7 @@ export default function HealthPage() {
         setApiStatus("Disconnected");
       });
 
-    fetch('/api/db-test')
+    fetch(`${API_BASE}/api/db-test`)
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {

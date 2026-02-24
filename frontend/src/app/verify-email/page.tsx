@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { API_BASE } from '@/lib/api';
 
 const COOLDOWN = 60;
 
@@ -17,7 +18,7 @@ export default function VerifyEmailPage() {
 
   async function resend() {
     setStatus('sending');
-    const response = await fetch('/api/users/resend-verification', {
+    const response = await fetch(`${API_BASE}/api/users/resend-verification`, {
       method: 'POST',
       credentials: 'include',
     });

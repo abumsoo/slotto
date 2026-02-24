@@ -1,6 +1,7 @@
 "use client";
 import { useState, FormEvent, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { API_BASE } from '@/lib/api';
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -21,7 +22,7 @@ function ResetPasswordForm() {
       return;
     }
     setLoading(true);
-    const res = await fetch("/api/users/reset-password", {
+    const res = await fetch(`${API_BASE}/api/users/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, newPassword }),

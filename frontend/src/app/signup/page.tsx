@@ -1,6 +1,7 @@
 "use client";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { API_BASE } from '@/lib/api';
 
 export default function SignupPage() {
   const [error, setError] = useState("");
@@ -28,7 +29,7 @@ export default function SignupPage() {
       password,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }
-    const response = await fetch('/api/users/signup', {
+    const response = await fetch(`${API_BASE}/api/users/signup`, {
       method: 'POST',
       headers: { "Content-type" : "application/json" },
       body: JSON.stringify(body),

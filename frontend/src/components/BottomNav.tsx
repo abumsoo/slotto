@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Home, Bell, User, Menu, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Toast } from '@/components/Toast';
+import { API_BASE } from '@/lib/api';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -18,7 +19,7 @@ export function BottomNav() {
   useEffect(() => {
     if (!user) return;
     function fetchUnreadCount() {
-      fetch('/api/notifications/unread-count', { credentials: 'include' })
+      fetch(`${API_BASE}/api/notifications/unread-count`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : null)
         .then(data => { if (data) setUnreadCount(data.count); });
     }
@@ -28,7 +29,7 @@ export function BottomNav() {
   }, [user]);
 
   function handleLogout() {
-    fetch('/api/users/logout', { method: 'POST', credentials: 'include' })
+    fetch(`${API_BASE}/api/users/logout`, { method: 'POST', credentials: 'include' })
       .then(() => router.push('/login'));
   }
 

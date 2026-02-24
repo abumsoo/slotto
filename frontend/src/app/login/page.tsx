@@ -1,6 +1,7 @@
 "use client";
 import { useState, FormEvent, Suspense } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
+import { API_BASE } from '@/lib/api';
 
 function LoginForm() {
   const [error, setError] = useState("");
@@ -16,7 +17,7 @@ function LoginForm() {
       email: formData.get("email"),
       password: formData.get("password"),
     }
-    const response = await fetch('/api/users/login', {
+    const response = await fetch(`${API_BASE}/api/users/login`, {
       method: 'POST',
       headers: { "Content-type" : "application/json" },
       credentials: 'include',

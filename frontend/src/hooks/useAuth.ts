@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { API_BASE } from '@/lib/api';
 
 interface User {
   id: number;
@@ -18,7 +19,7 @@ export function useAuth(options?: { redirectTo?: string }) {
   const [loading, setLoading] = useState(true);
 
   function fetchUser() {
-    return fetch('/api/users/me', {
+    return fetch(`${API_BASE}/api/users/me`, {
       credentials: 'include',
     })
       .then((res) => (res.ok ? res.json() : Promise.reject()))

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Post } from '@/components/PostCard';
 import { MarkdownContent } from '@/components/MarkdownContent';
+import { API_BASE } from '@/lib/api';
 import { timeAgo } from '@/helpers';
 
 interface ThreadViewProps {
@@ -61,7 +62,7 @@ export function ThreadView({ postId, highlightPostId }: ThreadViewProps) {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/posts/${postId}/thread`, { credentials: 'include' })
+    fetch(`${API_BASE}/api/posts/${postId}/thread`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         const filtered = (data as Post[]).filter(p => p.id !== postId);
