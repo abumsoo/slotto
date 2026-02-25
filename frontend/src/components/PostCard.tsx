@@ -69,10 +69,10 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
         </div>
       )}
       {showImage && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center overflow-auto">
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center overflow-auto">
           <button
             onClick={() => window.history.back()}
-            className="fixed top-4 right-4 text-white bg-black/50 hover:bg-white hover:text-black rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-colors"
+            className="fixed top-4 right-4 text-white bg-black/50 hover:bg-white hover:text-black rounded-full w-9 h-9 flex items-center justify-center cursor-pointer transition-colors z-[61]"
           >
             <X size={20} />
           </button>
