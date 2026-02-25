@@ -267,6 +267,7 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
   let imageUrl: string | null = null;
   if (req.file) {
     const resized = await sharp(req.file.buffer)
+      .rotate()
       .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toBuffer();
