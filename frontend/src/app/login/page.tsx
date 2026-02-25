@@ -14,7 +14,7 @@ function LoginForm() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const body = {
-      email: formData.get("email"),
+      identifier: formData.get("identifier"),
       password: formData.get("password"),
     }
     const response = await fetch(`${API_BASE}/api/users/login`, {
@@ -39,9 +39,9 @@ function LoginForm() {
         <h1 className="text-2xl font-semibold text-foreground text-center">Log In</h1>
         <form className="flex flex-col gap-4" onSubmit={onSubmitHandler}>
           <input
-            name="email"
-            type="email"
-            placeholder="Email"
+            name="identifier"
+            type="text"
+            placeholder="Email or username"
             required
             className="w-full bg-muted rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />

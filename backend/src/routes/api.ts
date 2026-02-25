@@ -120,8 +120,12 @@ router.post('/users/resend-verification', authenticate, async (req: Request, res
 })
 
 router.post('/users/login', loginLimiter, async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  const user = await db.oneOrNone('SELECT id, password_hash FROM users WHERE email = $1', [email]);
+  const { identifier, password } = req.body;
+  const isEmail = typeof identifier === 'string' && identifier.includes('@');
+  const user = await db.oneOrNone(
+    `SELECT id, password_hash FROM users WHERE ${isEmail ? 'email' : 'username'} = $1`,
+    [identifier]
+  );
   if (!user) {
     return res.status(401).json({ message: 'Invalid email or password' });
   }
