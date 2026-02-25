@@ -110,6 +110,10 @@ export function BottomNav() {
         />
         {/* Panel */}
         <div className={`absolute top-0 right-0 h-full w-64 bg-card border-l border-border flex flex-col transition-transform duration-300 ease-in-out ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="p-5 border-b border-border">
+            <p className="text-sm text-muted-foreground">Signed in as</p>
+            <p className="font-semibold">@{user.username}</p>
+          </div>
           <div className="flex-1" />
           <div className="p-3">
             <Link

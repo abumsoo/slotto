@@ -65,16 +65,17 @@ function ProfileContent() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20 space-y-6">
+      <p className="text-lg font-semibold">@{user.username}</p>
       <div className="flex border-b border-muted-foreground/30">
         <button
           onClick={() => setActiveTab('posts')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'posts' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex-1 py-2 text-sm font-medium transition-colors ${activeTab === 'posts' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
         >
           Posts
         </button>
         <button
           onClick={() => setActiveTab('bookmarks')}
-          className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'bookmarks' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          className={`flex-1 py-2 text-sm font-medium transition-colors ${activeTab === 'bookmarks' ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground hover:text-foreground'}`}
         >
           Bookmarks
         </button>

@@ -66,6 +66,7 @@ export function SideNav() {
     <>
     <nav className="hidden sm:flex flex-col gap-1 fixed left-0 top-0 h-full w-48 border-r border-border bg-card z-40 pt-6 px-3">
       {logo}
+      <p className="px-3 mb-2 text-sm text-muted-foreground truncate">@{user.username}</p>
       {links.map(({ href, label, icon, badge }) => (
         <Link
           key={href}
