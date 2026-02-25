@@ -134,10 +134,11 @@ router.post('/users/login', loginLimiter, async (req: Request, res: Response) =>
     process.env.JWT_SECRET!,
     { expiresIn: '7d' }
   );
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie('token', token, {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 7*24*60*60*1000
   });
   res.json({ message: 'Login successful' });
@@ -507,6 +508,41 @@ router.patch('/notifications/read', authenticate, async (req: Request, res: Resp
     );
   }
   res.json({ message: 'Marked as read' });
+});
+
+// Bookmarks
+router.get('/bookmarks', authenticate, async (req: Request, res: Response) => {
+  const bookmarks = await db.any(`
+    SELECT b.id as bookmark_id, p.id, p.content, p.image_url, p.created_at,
+           p.referenced_post_id, u.username, p.user_id
+    FROM bookmarks b
+    JOIN posts p ON p.id = b.referenced_post_id
+    JOIN users u ON u.id = p.user_id
+    WHERE b.user_id = $1
+    ORDER BY b.created_at DESC
+  `, [req.user!.id]);
+  res.json(bookmarks);
+});
+
+router.post('/bookmarks', authenticate, async (req: Request, res: Response) => {
+  const { referenced_post_id } = req.body;
+  if (!referenced_post_id) {
+    return res.status(400).json({ message: 'referenced_post_id is required' });
+  }
+  const post = await db.oneOrNone('SELECT id FROM posts WHERE id = $1', [referenced_post_id]);
+  if (!post) {
+    return res.status(404).json({ message: 'Post not found' });
+  }
+  const bookmark = await db.oneOrNone(
+    'INSERT INTO bookmarks (user_id, referenced_post_id) VALUES ($1, $2) ON CONFLICT (user_id, referenced_post_id) DO NOTHING RETURNING id',
+    [req.user!.id, referenced_post_id]
+  );
+  res.status(201).json({ bookmark_id: bookmark?.id ?? null });
+});
+
+router.delete('/bookmarks/:id', authenticate, async (req: Request, res: Response) => {
+  await db.none('DELETE FROM bookmarks WHERE id = $1 AND user_id = $2', [req.params.id, req.user!.id]);
+  res.sendStatus(204);
 });
 
 export default router;

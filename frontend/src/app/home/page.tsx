@@ -47,6 +47,7 @@ export default function HomePage() {
   const [cache] = useState<FeedCache | null>(popFeedCache);
   const [posts, setPosts] = useState<Post[]>(cache?.posts ?? []);
   const [ancestors, setAncestors] = useState<Post[]>(cache?.ancestors ?? []);
+  const [bookmarkMap, setBookmarkMap] = useState<Map<number, number>>(new Map());
   const [toast, setToast] = useState<string | null>(null);
   const [hasPostedToday, setHasPostedToday] = useState(false);
   const [viewingReference, setViewingReference] = useState<Post | null>(null);
@@ -108,6 +109,14 @@ export default function HomePage() {
     if (loading) return;
     if (user?.hasPostedToday) setHasPostedToday(true);
     if (!cache) loadInitialFeed();
+    if (user) {
+      fetch(`${API_BASE}/api/bookmarks`, { credentials: 'include' })
+        .then(res => res.json())
+        .then((items: Array<{ bookmark_id: number; id: number }>) => {
+          setBookmarkMap(new Map(items.map(b => [b.id, b.bookmark_id])));
+        })
+        .catch(() => {});
+    }
   }, [loading]);
 
   // Restore scroll after back-navigation — wait for auth to resolve so posts are in the DOM,
@@ -132,6 +141,33 @@ export default function HomePage() {
 
   function handleReply(post: Post) {
     router.push('/compose?replyTo=' + post.id);
+  }
+
+  function handleBookmark(post: Post) {
+    const existingId = bookmarkMap.get(post.id);
+    if (existingId !== undefined) {
+      fetch(`${API_BASE}/api/bookmarks/${existingId}`, { method: 'DELETE', credentials: 'include' })
+        .then(() => {
+          setBookmarkMap(prev => {
+            const next = new Map(prev);
+            next.delete(post.id);
+            return next;
+          });
+        });
+    } else {
+      fetch(`${API_BASE}/api/bookmarks`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referenced_post_id: post.id }),
+      })
+        .then(res => res.json())
+        .then(({ bookmark_id }) => {
+          if (bookmark_id) {
+            setBookmarkMap(prev => new Map(prev).set(post.id, bookmark_id));
+          }
+        });
+    }
   }
 
   function handleViewReference(referencedPostId: number) {
@@ -165,6 +201,8 @@ export default function HomePage() {
                 onReply={handleReply}
                 onViewReference={handleViewReference}
                 actionsDisabled={hasPostedToday}
+                onBookmark={user ? handleBookmark : undefined}
+                isBookmarked={bookmarkMap.has(post.id)}
               />
             ))}
           </div>

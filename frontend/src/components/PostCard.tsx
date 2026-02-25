@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Bookmark } from "lucide-react";
 import { timeAgo } from "@/helpers";
 import { MarkdownContent } from "@/components/MarkdownContent";
 
@@ -24,9 +24,11 @@ interface PostCardProps {
   onViewReference?: (postId: number) => void;
   actionsDisabled?: boolean;
   highlighted?: boolean;
+  onBookmark?: (post: Post) => void;
+  isBookmarked?: boolean;
 }
 
-export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted }: PostCardProps) {
+export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted, onBookmark, isBookmarked }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
 
   useEffect(() => {
@@ -90,7 +92,7 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
         <span className="text-sm text-muted-foreground flex items-center gap-2">
           {timeAgo(post.created_at)}
         </span>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           {onReply && (
             <button
               onClick={() => onReply(post)}
@@ -98,6 +100,15 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
               className="px-3 py-1 text-sm text-primary hover:bg-primary/15 rounded disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Reply
+            </button>
+          )}
+          {onBookmark && (
+            <button
+              onClick={() => onBookmark(post)}
+              className="p-1 text-muted-foreground hover:text-primary rounded transition-colors"
+              aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+            >
+              <Bookmark size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
             </button>
           )}
         </div>
