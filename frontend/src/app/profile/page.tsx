@@ -92,6 +92,7 @@ function ProfileContent() {
                   <PostCard
                     post={post}
                     highlighted={post.id === highlightPostId}
+                    onViewReference={(postId) => router.push('/post/' + postId)}
                   />
                   <div className="mt-1">
                     <button
@@ -101,7 +102,7 @@ function ProfileContent() {
                       {expandedThread === post.id ? 'Hide thread' : 'View thread'}
                     </button>
                     {expandedThread === post.id && (
-                      <ThreadView postId={post.id} highlightPostId={post.id} />
+                      <ThreadView postId={post.id} highlightPostId={post.id} onNavigate={(id) => router.push('/post/' + id)} />
                     )}
                   </div>
                 </div>

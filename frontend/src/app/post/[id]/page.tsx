@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PostCard, Post } from "@/components/PostCard";
+import { useAuth } from "@/hooks/useAuth";
 import { API_BASE } from '@/lib/api';
 import { ArrowLeft } from "lucide-react";
 
 export default function PostPage() {
   const { id } = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -38,7 +40,13 @@ export default function PostPage() {
         <div className="py-12 text-center text-sm text-muted-foreground">Loading…</div>
       ) : (
         <div className="-mx-4 sm:mx-0">
-          <PostCard post={post} highlighted />
+          <PostCard
+            post={post}
+            highlighted
+            onReply={user ? (p) => router.push('/compose?replyTo=' + p.id) : undefined}
+            onViewReference={(postId) => router.push('/post/' + postId)}
+            actionsDisabled={user?.hasPostedToday}
+          />
         </div>
       )}
     </div>
