@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Bookmark } from "lucide-react";
+import { X, Bookmark, Heart } from "lucide-react";
 import { timeAgo } from "@/helpers";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { Toast } from "@/components/Toast";
@@ -27,11 +27,18 @@ interface PostCardProps {
   highlighted?: boolean;
   onBookmark?: (post: Post) => void;
   isBookmarked?: boolean;
+  onLike?: (post: Post) => void;
+  onViewLikers?: (post: Post) => void;
+  isLiked?: boolean;
+  canUnlike?: boolean;
+  likeDisabled?: boolean;
 }
 
-export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted, onBookmark, isBookmarked }: PostCardProps) {
+export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted, onBookmark, isBookmarked, onLike, onViewLikers, isLiked, canUnlike, likeDisabled }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [showLikeBlocked, setShowLikeBlocked] = useState(false);
+  const [showUnlikeConfirm, setShowUnlikeConfirm] = useState(false);
 
   useEffect(() => {
     if (!showImage) return;
@@ -85,6 +92,37 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
           />
         </div>
       )}
+      {showUnlikeConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShowUnlikeConfirm(false)}>
+          <div className="bg-card rounded-lg shadow-lg border border-border p-6 max-w-sm w-full mx-4 space-y-3" onClick={e => e.stopPropagation()}>
+            <p className="font-semibold text-foreground">Unlike this post?</p>
+            <p className="text-sm text-muted-foreground">You won't be able to like another post today.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowUnlikeConfirm(false); onLike!(post); }}
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 text-sm"
+              >
+                Unlike
+              </button>
+              <button
+                onClick={() => setShowUnlikeConfirm(false)}
+                className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLikeBlocked && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShowLikeBlocked(false)}>
+          <div className="bg-card rounded-lg shadow-lg border border-border p-6 max-w-sm w-full mx-4 space-y-3" onClick={e => e.stopPropagation()}>
+            <p className="font-semibold text-foreground">You've used your like for today</p>
+            <p className="text-sm text-muted-foreground">Come back tomorrow to like another post.</p>
+            <button onClick={() => setShowLikeBlocked(false)} className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 text-sm">Got it</button>
+          </div>
+        </div>
+      )}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
       {decayPercent !== null && (
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted-foreground/10">
@@ -102,6 +140,21 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
               className={`px-3 py-1 text-sm text-primary hover:bg-primary/15 rounded ${actionsDisabled ? 'opacity-40' : ''}`}
             >
               Reply
+            </button>
+          )}
+          {(onLike || onViewLikers) && (
+            <button
+              onClick={() => {
+                if (onViewLikers) { onViewLikers(post); return; }
+                if (isLiked && !canUnlike) { setToast('You can only unlike posts you liked today'); return; }
+                if (isLiked && canUnlike) { setShowUnlikeConfirm(true); return; }
+                if (likeDisabled && !isLiked) { setShowLikeBlocked(true); return; }
+                onLike!(post);
+              }}
+              className="p-1 text-muted-foreground hover:text-primary rounded transition-colors"
+              aria-label={onViewLikers ? 'View likes' : isLiked ? 'Unlike' : 'Like'}
+            >
+              <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} className={isLiked ? 'text-primary' : ''} />
             </button>
           )}
           {onBookmark && (

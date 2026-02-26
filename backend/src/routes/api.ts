@@ -164,7 +164,10 @@ router.get('/users/me', authenticate, async(req, res) => {
       ) AS "hasPostedToday",
       (last_reply_date IS NOT NULL AND
         (last_reply_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date
-      ) AS "hasRepliedToday"
+      ) AS "hasRepliedToday",
+      (last_like_date IS NOT NULL AND
+        (last_like_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date
+      ) AS "hasLikedToday"
     FROM users WHERE id = $1
   `, [req.user.id]);
   res.json(user);
@@ -572,6 +575,57 @@ router.post('/bookmarks', authenticate, async (req: Request, res: Response) => {
 router.delete('/bookmarks/:id', authenticate, async (req: Request, res: Response) => {
   await db.none('DELETE FROM bookmarks WHERE id = $1 AND user_id = $2', [req.params.id, req.user!.id]);
   res.sendStatus(204);
+});
+
+// Likes
+router.get('/users/me/likes', authenticate, async (req: Request, res: Response) => {
+  const rows = await db.any(`
+    SELECT l.post_id,
+      (l.created_at AT TIME ZONE u.timezone)::date = (NOW() AT TIME ZONE u.timezone)::date AS today
+    FROM likes l
+    JOIN users u ON u.id = l.user_id
+    WHERE l.user_id = $1
+  `, [req.user!.id]);
+  res.json(rows);
+});
+
+router.post('/likes', authenticate, async (req: Request, res: Response) => {
+  const { post_id } = req.body;
+  if (!post_id) return res.status(400).json({ message: 'post_id is required' });
+  const post = await db.oneOrNone('SELECT user_id FROM posts WHERE id = $1', [post_id]);
+  if (!post) return res.status(404).json({ message: 'Post not found' });
+  if (post.user_id === req.user!.id) return res.status(403).json({ message: 'You cannot like your own post' });
+  const existing = await db.oneOrNone(`
+    SELECT l.id,
+      (l.created_at AT TIME ZONE u.timezone)::date = (NOW() AT TIME ZONE u.timezone)::date AS today
+    FROM likes l
+    JOIN users u ON u.id = l.user_id
+    WHERE l.user_id = $1 AND l.post_id = $2
+  `, [req.user!.id, post_id]);
+  if (existing) {
+    if (!existing.today) return res.status(403).json({ message: 'You can only unlike posts you liked today' });
+    await db.none('DELETE FROM likes WHERE id = $1', [existing.id]);
+    return res.json({ liked: false });
+  }
+  const { already_liked_today } = await db.one(
+    'SELECT (last_like_date IS NOT NULL AND (last_like_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date) AS already_liked_today FROM users WHERE id = $1',
+    [req.user!.id]
+  );
+  if (already_liked_today) return res.status(429).json({ message: 'You already liked a post today' });
+  await db.none('INSERT INTO likes (user_id, post_id) VALUES ($1, $2)', [req.user!.id, post_id]);
+  await db.none('UPDATE users SET last_like_date = NOW() WHERE id = $1', [req.user!.id]);
+  res.json({ liked: true });
+});
+
+router.get('/posts/:id/likes', authenticate, async (req: Request, res: Response) => {
+  const post = await db.oneOrNone('SELECT user_id FROM posts WHERE id = $1', [req.params.id]);
+  if (!post) return res.status(404).json({ message: 'Post not found' });
+  if (post.user_id !== req.user!.id) return res.status(403).json({ message: 'Forbidden' });
+  const likers = await db.any(
+    'SELECT u.username FROM likes l JOIN users u ON u.id = l.user_id WHERE l.post_id = $1 ORDER BY l.created_at DESC',
+    [req.params.id]
+  );
+  res.json(likers);
 });
 
 export default router;

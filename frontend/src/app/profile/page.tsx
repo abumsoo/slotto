@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, Suspense } from 'react';
 import { API_BASE } from '@/lib/api';
 import { PostCard, Post } from '@/components/PostCard';
 import { ThreadView } from '@/components/ThreadView';
+import { LikersModal } from '@/components/LikersModal';
 
 interface BookmarkItem extends Post {
   bookmark_id: number;
@@ -22,6 +23,7 @@ function ProfileContent() {
   const [expandedThread, setExpandedThread] = useState<number | null>(null);
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([]);
   const [bookmarksFetched, setBookmarksFetched] = useState(false);
+  const [viewingLikers, setViewingLikers] = useState<number | null>(null);
   const scrolledRef = useRef(false);
 
   useEffect(() => {
@@ -93,6 +95,7 @@ function ProfileContent() {
                     post={post}
                     highlighted={post.id === highlightPostId}
                     onViewReference={(postId) => router.push('/post/' + postId)}
+                    onViewLikers={(p) => setViewingLikers(p.id)}
                   />
                   <div className="mt-1">
                     <button
@@ -141,6 +144,7 @@ function ProfileContent() {
           )}
         </>
       )}
+      {viewingLikers && <LikersModal postId={viewingLikers} onClose={() => setViewingLikers(null)} />}
     </div>
   );
 }

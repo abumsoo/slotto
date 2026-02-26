@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PostCard, Post } from "@/components/PostCard";
 import { Toast } from "@/components/Toast";
 import { ReferenceModal } from "@/components/ReferenceModal";
+import { LikersModal } from "@/components/LikersModal";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
 
@@ -48,6 +49,9 @@ export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>(cache?.posts ?? []);
   const [ancestors, setAncestors] = useState<Post[]>(cache?.ancestors ?? []);
   const [bookmarkMap, setBookmarkMap] = useState<Map<number, number>>(new Map());
+  const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
+  const [likedTodaySet, setLikedTodaySet] = useState<Set<number>>(new Set());
+  const [viewingLikers, setViewingLikers] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [hasRepliedToday, setHasRepliedToday] = useState(false);
   const [viewingReference, setViewingReference] = useState<Post | null>(null);
@@ -116,6 +120,13 @@ export default function HomePage() {
           setBookmarkMap(new Map(items.map(b => [b.id, b.bookmark_id])));
         })
         .catch(() => {});
+      fetch(`${API_BASE}/api/users/me/likes`, { credentials: 'include' })
+        .then(res => res.json())
+        .then((rows: { post_id: number; today: boolean }[]) => {
+          setLikedSet(new Set(rows.map(r => r.post_id)));
+          setLikedTodaySet(new Set(rows.filter(r => r.today).map(r => r.post_id)));
+        })
+        .catch(() => {});
     }
   }, [loading]);
 
@@ -141,6 +152,28 @@ export default function HomePage() {
 
   function handleReply(post: Post) {
     router.push('/compose?replyTo=' + post.id);
+  }
+
+  function handleLike(post: Post) {
+    fetch(`${API_BASE}/api/likes`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: post.id }),
+    })
+      .then(res => res.json())
+      .then(({ liked }) => {
+        setLikedSet(prev => {
+          const next = new Set(prev);
+          liked ? next.add(post.id) : next.delete(post.id);
+          return next;
+        });
+        setLikedTodaySet(prev => {
+          const next = new Set(prev);
+          liked ? next.add(post.id) : next.delete(post.id);
+          return next;
+        });
+      });
   }
 
   function handleBookmark(post: Post) {
@@ -203,6 +236,11 @@ export default function HomePage() {
                 actionsDisabled={hasRepliedToday}
                 onBookmark={user ? handleBookmark : undefined}
                 isBookmarked={bookmarkMap.has(post.id)}
+                onLike={user && post.user_id !== user.id ? handleLike : undefined}
+                onViewLikers={user && post.user_id === user.id ? (p) => setViewingLikers(p.id) : undefined}
+                isLiked={likedSet.has(post.id)}
+                canUnlike={likedTodaySet.has(post.id)}
+                likeDisabled={user?.hasLikedToday}
               />
             ))}
           </div>
@@ -227,6 +265,7 @@ export default function HomePage() {
           onGoTo={handleGoToPost}
         />
       )}
+      {viewingLikers && <LikersModal postId={viewingLikers} onClose={() => setViewingLikers(null)} />}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   )

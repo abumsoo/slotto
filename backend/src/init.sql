@@ -9,6 +9,7 @@ CREATE TABLE users (
   profile_pic VARCHAR(255),
   last_post_date TIMESTAMP WITH TIME ZONE,
   last_reply_date TIMESTAMP WITH TIME ZONE,
+  last_like_date TIMESTAMP WITH TIME ZONE,
   last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   email_verified BOOLEAN DEFAULT FALSE,
@@ -42,3 +43,13 @@ CREATE TABLE notifications (
 );
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_notifications_read ON notifications(user_id, read);
+
+CREATE TABLE likes (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, post_id)
+);
+CREATE INDEX idx_likes_user_id ON likes(user_id);
+CREATE INDEX idx_likes_post_id ON likes(post_id);

@@ -12,6 +12,7 @@ interface User {
   verified: boolean;
   hasPostedToday: boolean;
   hasRepliedToday: boolean;
+  hasLikedToday: boolean;
 }
 
 export function useAuth(options?: { redirectTo?: string }) {

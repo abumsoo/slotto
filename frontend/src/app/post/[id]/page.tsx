@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { PostCard, Post } from "@/components/PostCard";
 import { useAuth } from "@/hooks/useAuth";
+import { LikersModal } from "@/components/LikersModal";
 import { API_BASE } from '@/lib/api';
 import { ArrowLeft } from "lucide-react";
 
@@ -13,6 +14,9 @@ export default function PostPage() {
   const { user } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likedToday, setLikedToday] = useState(false);
+  const [showLikers, setShowLikers] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/posts/${id}`, { credentials: 'include' })
@@ -22,6 +26,28 @@ export default function PostPage() {
       })
       .then(data => { if (data) setPost(data); });
   }, [id]);
+
+  useEffect(() => {
+    if (!user || !post || post.user_id === user.id) return;
+    fetch(`${API_BASE}/api/users/me/likes`, { credentials: 'include' })
+      .then(res => res.json())
+      .then((rows: { post_id: number; today: boolean }[]) => {
+        const match = rows.find(r => r.post_id === post.id);
+        setIsLiked(!!match);
+        setLikedToday(!!match?.today);
+      });
+  }, [user, post]);
+
+  function handleLike(p: Post) {
+    fetch(`${API_BASE}/api/likes`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: p.id }),
+    })
+      .then(res => res.json())
+      .then(({ liked }) => { setIsLiked(liked); setLikedToday(liked); });
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20">
@@ -46,7 +72,13 @@ export default function PostPage() {
             onReply={user ? (p) => router.push('/compose?replyTo=' + p.id) : undefined}
             onViewReference={(postId) => router.push('/post/' + postId)}
             actionsDisabled={user?.hasRepliedToday}
+            onLike={user && post.user_id !== user.id ? handleLike : undefined}
+            onViewLikers={user && post.user_id === user.id ? () => setShowLikers(true) : undefined}
+            isLiked={isLiked}
+            canUnlike={likedToday}
+            likeDisabled={user?.hasLikedToday}
           />
+          {showLikers && <LikersModal postId={post.id} onClose={() => setShowLikers(false)} />}
         </div>
       )}
     </div>
