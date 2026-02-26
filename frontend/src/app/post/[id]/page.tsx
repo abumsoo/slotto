@@ -45,7 +45,7 @@ export default function PostPage() {
             highlighted
             onReply={user ? (p) => router.push('/compose?replyTo=' + p.id) : undefined}
             onViewReference={(postId) => router.push('/post/' + postId)}
-            actionsDisabled={user?.hasPostedToday}
+            actionsDisabled={user?.hasRepliedToday}
           />
         </div>
       )}

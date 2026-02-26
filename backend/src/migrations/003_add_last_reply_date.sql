@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN last_reply_date TIMESTAMP WITH TIME ZONE;

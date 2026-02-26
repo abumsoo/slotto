@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Bookmark } from "lucide-react";
 import { timeAgo } from "@/helpers";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { Toast } from "@/components/Toast";
 
 
 export interface Post {
@@ -30,6 +31,7 @@ interface PostCardProps {
 
 export function PostCard({ post, onReply, onViewReference, actionsDisabled, highlighted, onBookmark, isBookmarked }: PostCardProps) {
   const [showImage, setShowImage] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (!showImage) return;
@@ -83,6 +85,7 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
           />
         </div>
       )}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
       {decayPercent !== null && (
         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted-foreground/10">
           <div className="h-full bg-muted-foreground/25 transition-all" style={{ width: `${decayPercent}%` }} />
@@ -95,9 +98,8 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
         <div className="flex gap-2 items-center">
           {onReply && (
             <button
-              onClick={() => onReply(post)}
-              disabled={actionsDisabled}
-              className="px-3 py-1 text-sm text-primary hover:bg-primary/15 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={() => actionsDisabled ? setToast("You've already replied today") : onReply(post)}
+              className={`px-3 py-1 text-sm text-primary hover:bg-primary/15 rounded ${actionsDisabled ? 'opacity-40' : ''}`}
             >
               Reply
             </button>

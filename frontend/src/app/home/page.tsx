@@ -49,7 +49,7 @@ export default function HomePage() {
   const [ancestors, setAncestors] = useState<Post[]>(cache?.ancestors ?? []);
   const [bookmarkMap, setBookmarkMap] = useState<Map<number, number>>(new Map());
   const [toast, setToast] = useState<string | null>(null);
-  const [hasPostedToday, setHasPostedToday] = useState(false);
+  const [hasRepliedToday, setHasRepliedToday] = useState(false);
   const [viewingReference, setViewingReference] = useState<Post | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(cache?.nextCursor ?? null);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -107,7 +107,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (loading) return;
-    if (user?.hasPostedToday) setHasPostedToday(true);
+    if (user?.hasRepliedToday) setHasRepliedToday(true);
     if (!cache) loadInitialFeed();
     if (user) {
       fetch(`${API_BASE}/api/bookmarks`, { credentials: 'include' })
@@ -200,7 +200,7 @@ export default function HomePage() {
                 post={post}
                 onReply={handleReply}
                 onViewReference={handleViewReference}
-                actionsDisabled={hasPostedToday}
+                actionsDisabled={hasRepliedToday}
                 onBookmark={user ? handleBookmark : undefined}
                 isBookmarked={bookmarkMap.has(post.id)}
               />

@@ -37,12 +37,13 @@ function ComposeContent() {
     );
   }
 
-  if (user.hasPostedToday) {
+  if (replyToId ? user.hasRepliedToday : user.hasPostedToday) {
+    const isReply = !!replyToId;
     return (
       <div className="max-w-2xl mx-auto px-4 py-6 pb-20 sm:pb-6 sm:pl-20">
         <div className="bg-card border-y border-border p-4 text-center space-y-1">
-          <p className="text-foreground font-semibold">You&apos;ve posted today!</p>
-          <p className="text-sm text-muted-foreground">Your post will last 3 days unless others quote it. Enjoy what others have posted and post again tomorrow.</p>
+          <p className="text-foreground font-semibold">{isReply ? "You've already replied today!" : "You've posted today!"}</p>
+          <p className="text-sm text-muted-foreground">{isReply ? "Come back tomorrow to reply again." : "Your post will last 3 days unless others quote it. Enjoy what others have posted and post again tomorrow."}</p>
         </div>
       </div>
     );

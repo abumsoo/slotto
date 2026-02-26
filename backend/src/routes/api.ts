@@ -161,7 +161,10 @@ router.get('/users/me', authenticate, async(req, res) => {
     SELECT id, username, name, email, email_verified AS verified,
       (last_post_date IS NOT NULL AND
         (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date
-      ) AS "hasPostedToday"
+      ) AS "hasPostedToday",
+      (last_reply_date IS NOT NULL AND
+        (last_reply_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date
+      ) AS "hasRepliedToday"
     FROM users WHERE id = $1
   `, [req.user.id]);
   res.json(user);
@@ -287,12 +290,29 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
   if (!body.content || body.content.length > 1000) {
     return res.status(400).json({ message: 'Post must be 1-1000 characters'});
   }
-  const { already_posted_today } = await db.one('SELECT (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date AS already_posted_today FROM users WHERE id=$1', [req.user.id]);
-  if (already_posted_today) {
-    res.status(429).json({ message: "You already posted today"});
-    return;
-  }
   const referencedPostId = body.referenced_post_id ? parseInt(body.referenced_post_id) : null;
+  const isReply = !!referencedPostId;
+
+  if (isReply) {
+    const { already_replied_today } = await db.one(
+      'SELECT (last_reply_date IS NOT NULL AND (last_reply_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date) AS already_replied_today FROM users WHERE id=$1',
+      [req.user.id]
+    );
+    if (already_replied_today) {
+      res.status(429).json({ message: "You already replied today" });
+      return;
+    }
+  } else {
+    const { already_posted_today } = await db.one(
+      'SELECT (last_post_date IS NOT NULL AND (last_post_date AT TIME ZONE timezone)::date = (NOW() AT TIME ZONE timezone)::date) AS already_posted_today FROM users WHERE id=$1',
+      [req.user.id]
+    );
+    if (already_posted_today) {
+      res.status(429).json({ message: "You already posted today" });
+      return;
+    }
+  }
+
   if (referencedPostId) {
     const exists = await db.oneOrNone('SELECT id FROM posts WHERE id = $1', [referencedPostId]);
     if (!exists) {
@@ -305,7 +325,11 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
   VALUES ($1, $2, $3, $4)
   RETURNING *`,
     [body.content, req.user.id, imageUrl, referencedPostId]);
-  await db.none('UPDATE users SET last_post_date = NOW() WHERE id=$1', [req.user.id]);
+  if (isReply) {
+    await db.none('UPDATE users SET last_reply_date = NOW() WHERE id=$1', [req.user.id]);
+  } else {
+    await db.none('UPDATE users SET last_post_date = NOW() WHERE id=$1', [req.user.id]);
+  }
 
   // Create notification if referencing another user's post
   if (referencedPostId) {
