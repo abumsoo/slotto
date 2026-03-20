@@ -8,6 +8,9 @@ export function MarkdownContent({ content, onPostLink }: { content: string; onPo
       allowedElements={ALLOWED_ELEMENTS}
       unwrapDisallowed={true}
       components={{
+        ul: ({ children }) => <ul className="list-disc list-inside my-1 space-y-0.5">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal list-inside my-1 space-y-0.5">{children}</ol>,
+        li: ({ children }) => <li>{children}</li>,
         a: ({ href, children }) => {
           if (href && /^javascript:/i.test(href)) {
             return <>{children}</>;
