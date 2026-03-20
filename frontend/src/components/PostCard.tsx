@@ -17,6 +17,7 @@ export interface Post {
   parent_content: string | null;
   parent_username: string | null;
   parent_id: number | null;
+  link_preview: { url: string; title: string | null; description: string | null; image: string | null } | null;
 }
 
 interface PostCardProps {
@@ -65,6 +66,23 @@ export function PostCard({ post, onReply, onViewReference, actionsDisabled, high
         </div>
       )}
       <div className="text-card-foreground"><MarkdownContent content={post.content} onPostLink={onViewReference} /></div>
+      {post.link_preview && (
+        <a
+          href={post.link_preview.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex gap-3 rounded-lg border border-muted-foreground/20 overflow-hidden bg-muted/30 hover:bg-muted/50 transition-colors"
+        >
+          {post.link_preview.image && (
+            <img src={post.link_preview.image} alt="" className="w-20 h-20 object-cover flex-shrink-0" />
+          )}
+          <div className="py-2 pr-3 min-w-0">
+            {post.link_preview.title && <p className="text-sm font-medium truncate">{post.link_preview.title}</p>}
+            {post.link_preview.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{post.link_preview.description}</p>}
+            <p className="text-xs text-muted-foreground/60 truncate mt-1">{post.link_preview.url}</p>
+          </div>
+        </a>
+      )}
       {post.image_url && (
         <div
           className="mt-2 max-h-96 flex items-center justify-start cursor-pointer"

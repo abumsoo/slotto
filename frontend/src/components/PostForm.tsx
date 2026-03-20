@@ -24,6 +24,7 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [error, setError] = useState("");
+  const [linkPreview, setLinkPreview] = useState<{ url: string; title: string | null; description: string | null; image: string | null } | null>(null);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -95,6 +96,41 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
     });
   }
 
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const pasted = e.clipboardData.getData('text');
+    let url: URL;
+    try {
+      url = new URL(pasted);
+    } catch {
+      return; // not a URL, let default paste happen
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+    e.preventDefault();
+    const textarea = textareaRef.current!;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = postContent.slice(start, end);
+    const before = postContent.slice(0, start);
+    const after = postContent.slice(end);
+    const label = selected || pasted;
+    const inserted = `[${label}](${pasted})`;
+    const newContent = `${before}${inserted}${after}`;
+    setPostContent(newContent);
+    requestAnimationFrame(() => {
+      textarea.focus();
+      // select the label portion so the user can easily replace it
+      textarea.setSelectionRange(before.length + 1, before.length + 1 + label.length);
+    });
+
+    // fetch OG preview in the background
+    setLinkPreview(null);
+    fetch(`${API_BASE}/api/og?url=${encodeURIComponent(pasted)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setLinkPreview(data); })
+      .catch(() => {});
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!postContent.trim() && !postImage) return;
@@ -110,6 +146,9 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
     }
     if (referencedPost) {
       formData.append('referenced_post_id', String(referencedPost.id));
+    }
+    if (linkPreview) {
+      formData.append('link_preview', JSON.stringify(linkPreview));
     }
 
     const response = await fetch(`${API_BASE}/api/post`, {
@@ -134,6 +173,7 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
     setPostContent("");
     setPostImage(null);
     setImagePreview(null);
+    setLinkPreview(null);
     setIsPosting(false);
     onClearReference?.();
     onPost(newPost);
@@ -180,6 +220,7 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
             ref={textareaRef}
             value={postContent}
             onChange={(e) => { setPostContent(e.target.value); if (error) setError(""); }}
+            onPaste={handlePaste}
             maxLength={MAX_LENGTH}
             placeholder="What's on your mind today?"
             className="w-full bg-transparent px-4 pt-3 pb-2 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
@@ -192,6 +233,26 @@ export function PostForm({ onPost, onLoginRequired, onVerifyRequired, isLoggedIn
         {postContent.trim() && (
           <div className="px-4 py-3 border-t border-muted-foreground/20 text-foreground">
             <MarkdownContent content={postContent} />
+          </div>
+        )}
+        {linkPreview && (
+          <div className="mx-4 mb-3 rounded-lg border border-muted-foreground/20 overflow-hidden flex gap-3 bg-muted/30 relative">
+            <button
+              type="button"
+              onClick={() => setLinkPreview(null)}
+              className="absolute top-1.5 right-1.5 text-muted-foreground hover:text-foreground leading-none"
+              title="Remove preview"
+            >
+              ×
+            </button>
+            {linkPreview.image && (
+              <img src={linkPreview.image} alt="" className="w-20 h-20 object-cover flex-shrink-0" />
+            )}
+            <div className="py-2 pr-6 min-w-0">
+              {linkPreview.title && <p className="text-sm font-medium truncate">{linkPreview.title}</p>}
+              {linkPreview.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{linkPreview.description}</p>}
+              <p className="text-xs text-muted-foreground/60 truncate mt-1">{linkPreview.url}</p>
+            </div>
           </div>
         )}
         {imagePreview && (

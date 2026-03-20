@@ -322,12 +322,17 @@ router.post('/post', authenticate, upload.single('image'), async (req: Request, 
       return res.status(400).json({ message: 'Referenced post not found' });
     }
   }
+  let linkPreview: object | null = null;
+  if (body.link_preview) {
+    try { linkPreview = JSON.parse(body.link_preview); } catch { /* ignore malformed */ }
+  }
+
   const post = await db.one(`
   INSERT INTO posts
-  (content, user_id, image_url, referenced_post_id)
-  VALUES ($1, $2, $3, $4)
+  (content, user_id, image_url, referenced_post_id, link_preview)
+  VALUES ($1, $2, $3, $4, $5)
   RETURNING *`,
-    [body.content, req.user.id, imageUrl, referencedPostId]);
+    [body.content, req.user.id, imageUrl, referencedPostId, linkPreview ? JSON.stringify(linkPreview) : null]);
   if (isReply) {
     await db.none('UPDATE users SET last_reply_date = NOW() WHERE id=$1', [req.user.id]);
   } else {
@@ -626,6 +631,38 @@ router.get('/posts/:id/likes', authenticate, async (req: Request, res: Response)
     [req.params.id]
   );
   res.json(likers);
+});
+
+router.get('/og', async (req: Request, res: Response) => {
+  const { url } = req.query;
+  if (typeof url !== 'string') return res.status(400).json({ message: 'url required' });
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return res.status(400).json({ message: 'invalid url' });
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return res.status(400).json({ message: 'invalid url' });
+  }
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; eslo-bot/1.0)' },
+      signal: AbortSignal.timeout(5000),
+    });
+    const html = await response.text();
+    function getMeta(property: string): string | null {
+      const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${property}["'][^>]+content=["']([^"']+)["']`, 'i'))
+        || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${property}["']`, 'i'));
+      return m ? m[1] : null;
+    }
+    const title = getMeta('og:title') || html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || null;
+    const description = getMeta('og:description') || getMeta('description');
+    const image = getMeta('og:image');
+    res.json({ title: title?.trim() ?? null, description: description?.trim() ?? null, image: image?.trim() ?? null, url });
+  } catch {
+    res.status(502).json({ message: 'failed to fetch url' });
+  }
 });
 
 export default router;
